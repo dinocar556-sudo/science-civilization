@@ -38,6 +38,35 @@ tailwind.config = {
   }
   .menu-btn:hover { transform: translateY(-2px); }
   .menu-btn:active { transform: translateY(1px); }
+
+  /* ---------- 🔨 기술 제련(강화) 연출 ---------- */
+  @keyframes hammerSwing {
+    0%   { transform: rotate(-48deg) translateY(-6px); }
+    38%  { transform: rotate(14deg)  translateY(6px); }
+    46%  { transform: rotate(8deg)   translateY(4px); }
+    100% { transform: rotate(-48deg) translateY(-6px); }
+  }
+  @keyframes anvilShake { 0%,100%{transform:translateY(0)} 8%{transform:translateY(4px) scaleY(.96)} 20%{transform:translateY(0)} }
+  @keyframes sparkOut { from { opacity:1; transform:translate(0,0) scale(1);} to { opacity:0; transform:translate(var(--sx),var(--sy)) scale(.2);} }
+  @keyframes heatPulse { 0%,100%{filter:drop-shadow(0 0 6px #f59e0b)} 50%{filter:drop-shadow(0 0 22px #fbbf24)} }
+  @keyframes successBurst { 0%{opacity:0;transform:scale(.3)} 40%{opacity:1;transform:scale(1.15)} 100%{opacity:1;transform:scale(1)} }
+  @keyframes failCrack { 0%{opacity:0;transform:scale(1.4) rotate(-6deg)} 100%{opacity:1;transform:scale(1) rotate(0)} }
+  .hammer { transform-origin: 80% 90%; }
+  .hammer.swing { animation: hammerSwing .5s ease-in-out; }
+  .anvil.hit { animation: anvilShake .5s ease-in-out; }
+  .forge-core.heating { animation: heatPulse 1s ease-in-out infinite; }
+  .spark { position:absolute; width:6px; height:6px; border-radius:50%; background:#fde68a; animation: sparkOut .55s ease-out forwards; }
+  .burst { animation: successBurst .45s cubic-bezier(.2,1.4,.4,1) forwards; }
+  .crack { animation: failCrack .35s ease-out forwards; }
+
+  /* ---------- ⚔️ 전투 연출 ---------- */
+  @keyframes chargeL { 0%{transform:translateX(0)} 42%{transform:translateX(78px)} 58%{transform:translateX(58px)} 100%{transform:translateX(0)} }
+  @keyframes chargeR { 0%{transform:translateX(0)} 42%{transform:translateX(-78px)} 58%{transform:translateX(-58px)} 100%{transform:translateX(0)} }
+  @keyframes clashPop { 0%{opacity:0;transform:scale(.4) rotate(-20deg)} 35%{opacity:1;transform:scale(1.35) rotate(8deg)} 100%{opacity:0;transform:scale(2.1) rotate(20deg)} }
+  @keyframes hpDrain { from { width: var(--from); } to { width: var(--to); } }
+  .charge-l.go { animation: chargeL .6s ease-in-out; }
+  .charge-r.go { animation: chargeR .6s ease-in-out; }
+  .clash { animation: clashPop .6s ease-out forwards; }
   body { background:
       radial-gradient(1200px 600px at 20% -10%, #1e2b52 0%, transparent 60%),
       radial-gradient(900px 500px at 90% 0%, #23324f 0%, transparent 55%),
@@ -471,7 +500,7 @@ tailwind.config = {
   <header class="mb-2 lg:shrink-0">
     <div class="flex items-end justify-between gap-3 flex-wrap mb-2">
       <div class="flex items-center gap-2">
-        <span class="text-3xl">🔬</span>
+        <span id="brandLogo" class="text-3xl leading-none shrink-0">🔬</span>
         <div>
           <h1 class="font-title text-xl lg:text-2xl leading-tight text-white tracking-wide">문명 <span class="text-amber-300 text-sm">과학기술 에디션</span></h1>
           <p class="text-[11px] lg:text-xs text-slate-400 -mt-0.5">중3 과학 · 과학기술과 인류 문명</p>
@@ -647,6 +676,122 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- ================= MODAL: 기술 소개 (제련 성공 직후) ================= -->
+<div id="techInfoModal" class="fixed inset-0 z-[58] hidden items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+  <div class="w-full max-w-5xl max-h-[95vh] overflow-y-auto rounded-2xl border-2 border-amber-600/70 bg-panel2" style="animation:popIn .3s ease-out">
+
+    <!-- 그림 (잘리지 않도록 원본 비율 그대로 표시) -->
+    <div class="relative w-full">
+      <img id="tiArtImg" class="hidden w-full block" alt="">
+      <div id="tiArt" class="relative w-full aspect-[16/9] flex items-center justify-center"
+           style="background:radial-gradient(120% 100% at 50% 20%,#2b3a63 0%,#131c33 60%,#0b1220 100%)">
+        <div id="tiArtFallback" class="flex flex-col items-center"></div>
+      </div>
+      <div class="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-panel2 to-transparent pointer-events-none"></div>
+      <div class="absolute top-3 left-4 text-[11px] tracking-[.3em] text-amber-300/90 drop-shadow-lg">NEW TECHNOLOGY</div>
+    </div>
+
+    <div class="px-5 pb-5 -mt-6 relative">
+      <div class="flex items-center gap-3">
+        <span id="tiIcon" class="shrink-0 rounded-xl bg-black/50 border border-line p-1.5"></span>
+        <div>
+          <div id="tiName" class="font-title text-3xl text-white leading-tight"></div>
+          <div id="tiWhen" class="text-[12px] text-amber-300"></div>
+        </div>
+      </div>
+
+      <!-- 그림에 설명이 들어 있으면 이 부분은 숨겨집니다 -->
+      <div id="tiText">
+        <div id="tiWhat" class="text-[13.5px] text-slate-100 leading-relaxed mt-3"></div>
+        <div class="mt-2 rounded-xl bg-emerald-900/25 border border-emerald-700/50 p-2.5">
+          <div class="text-[12px] text-emerald-300 mb-0.5">✨ 인류 문명을 이렇게 바꿨습니다</div>
+          <div id="tiWhy" class="text-[13px] text-slate-100 leading-relaxed"></div>
+        </div>
+        <div class="mt-2 rounded-xl bg-rose-900/25 border border-rose-700/50 p-2.5">
+          <div class="text-[12px] text-rose-300 mb-0.5">⚖️ 하지만 다른 얼굴도 있었습니다</div>
+          <div id="tiTwo" class="text-[13px] text-slate-100 leading-relaxed"></div>
+        </div>
+      </div>
+      <div class="mt-2 rounded-xl bg-black/30 border border-line p-2.5">
+        <div class="text-[12px] text-sky-300 mb-0.5">🎮 게임에서의 효과</div>
+        <div id="tiEffect" class="text-[13px] text-slate-100 leading-snug"></div>
+      </div>
+
+      <button id="tiClose" class="menu-btn w-full mt-3 rounded-xl border-b-4 border-amber-700 bg-gradient-to-b from-amber-300 to-amber-500 text-slate-900 py-3 text-lg">계속한다</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: 기술 제련(강화) ================= -->
+<div id="forgeModal" class="fixed inset-0 z-[55] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div class="w-full max-w-md rounded-2xl border-2 border-amber-700/70 bg-panel2 p-5 text-center" style="animation:popIn .25s ease-out">
+    <div class="text-[11px] text-amber-300 tracking-widest">TECH FORGE</div>
+    <div id="forgeName" class="font-title text-2xl text-white mt-0.5"></div>
+
+    <!-- 성공 확률 -->
+    <div class="mt-3 rounded-xl bg-panel border border-line p-2.5">
+      <div class="flex items-center justify-between text-[12px] text-slate-300">
+        <span>성공 확률</span><span id="forgePity" class="text-[11px] text-emerald-300"></span>
+      </div>
+      <div class="h-3 bg-slate-800 rounded-full overflow-hidden mt-1">
+        <div id="forgeBar" class="h-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-500" style="width:0%"></div>
+      </div>
+      <div id="forgeRate" class="font-title text-3xl text-amber-300 mt-1">0%</div>
+    </div>
+
+    <!-- 모루 + 망치 -->
+    <div class="relative mt-4 h-[130px] flex items-end justify-center select-none">
+      <div id="forgeSparks" class="absolute inset-0 pointer-events-none"></div>
+      <div class="relative">
+        <div id="forgeCore" class="forge-core text-5xl leading-none mb-1"></div>
+        <div class="anvil text-5xl leading-none" id="forgeAnvil">🗿</div>
+      </div>
+      <div id="forgeHammer" class="hammer absolute right-[26%] bottom-[46px] text-5xl">🔨</div>
+      <div id="forgeResult" class="absolute inset-0 hidden flex-col items-center justify-center"></div>
+    </div>
+
+    <div id="forgeCost" class="text-[12px] text-slate-400 mt-1"></div>
+    <button id="forgeGo" class="menu-btn w-full mt-3 rounded-xl border-b-4 border-amber-700 bg-gradient-to-b from-amber-300 to-amber-500 text-slate-900 py-3 text-lg">🔨  제련 시작</button>
+    <button id="forgeClose" class="hidden w-full mt-2 rounded-xl border-2 border-line bg-panel py-2.5 text-sm hover:bg-slate-700/40 transition">닫기</button>
+  </div>
+</div>
+
+<!-- ================= MODAL: 전투 ================= -->
+<div id="battleModal" class="fixed inset-0 z-[55] hidden items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+  <div class="w-full max-w-xl rounded-2xl border-2 border-rose-700/70 bg-panel2 p-5 text-center overflow-hidden" style="animation:popIn .25s ease-out">
+    <div class="text-[11px] text-rose-300 tracking-widest">BATTLE</div>
+    <div id="battleTitle" class="font-title text-2xl text-white mt-0.5"></div>
+
+    <div class="mt-3 grid grid-cols-2 gap-3">
+      <div>
+        <div class="text-[12px] text-sky-300">🏛️ 우리 문명</div>
+        <div class="h-2.5 bg-slate-800 rounded-full overflow-hidden mt-1">
+          <div id="hpMine" class="h-full bg-sky-400 transition-all duration-500" style="width:100%"></div>
+        </div>
+        <div id="powMine" class="text-[13px] text-white mt-0.5">0</div>
+      </div>
+      <div>
+        <div id="foeName" class="text-[12px] text-rose-300">🏴 적</div>
+        <div class="h-2.5 bg-slate-800 rounded-full overflow-hidden mt-1">
+          <div id="hpFoe" class="h-full bg-rose-400 transition-all duration-500" style="width:100%"></div>
+        </div>
+        <div id="powFoe" class="text-[13px] text-white mt-0.5">0</div>
+      </div>
+    </div>
+
+    <div class="relative mt-4 h-[110px] flex items-center justify-between px-6 select-none">
+      <div id="fighterL" class="charge-l text-5xl">⚔️</div>
+      <div id="clashFx" class="absolute inset-0 flex items-center justify-center text-6xl pointer-events-none"></div>
+      <div id="fighterR" class="charge-r text-5xl">🏴</div>
+    </div>
+
+    <div id="battleLog" class="text-[13px] text-slate-300 min-h-[22px]"></div>
+    <div id="battleResult" class="hidden mt-2 rounded-xl border-2 p-3"></div>
+    <button id="battleGo" class="menu-btn w-full mt-3 rounded-xl border-b-4 border-rose-700 bg-gradient-to-b from-rose-400 to-rose-600 text-white py-3 text-lg">⚔️  돌격!</button>
+    <button id="battleClose" class="hidden w-full mt-2 rounded-xl border-b-4 border-sky-700 bg-sky-500 text-white py-3 text-base">계속한다</button>
+  </div>
+</div>
+
 <!-- ================= MODAL: 카드 뽑기 ================= -->
 <div id="drawModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
   <div class="w-full max-w-lg rounded-2xl border-2 border-line bg-panel2 p-4 text-center" style="animation:popIn .25s ease-out">
@@ -687,11 +832,12 @@ tailwind.config = {
 
       <!-- ── 화면 1 : 타이틀 ───────────────────────── -->
       <div id="introHome" class="min-h-full flex flex-col items-center justify-center px-6 py-8 text-center">
+        <div id="titleLogo" class="hidden mb-2"></div>
         <div class="text-[11px] tracking-[0.4em] text-amber-200/80 mb-1">SCIENCE CIVILIZATION</div>
         <h1 class="font-title title-glow text-7xl sm:text-8xl leading-none">문명</h1>
         <div class="font-title text-xl sm:text-2xl text-amber-200 mt-1 tracking-wide">과학기술 에디션</div>
         <p class="text-[14px] text-slate-100 mt-4 leading-relaxed drop-shadow-lg">
-          작은 정착지에서 시작해 12턴 안에 인류의 5대 과학기술을 손에 넣으세요.<br>
+          작은 정착지에서 시작해 20턴 안에 인류의 5대 과학기술을 손에 넣으세요.<br>
           기근과 전염병, 그리고 전쟁이 당신의 문명을 시험합니다.
         </p>
 
@@ -714,7 +860,7 @@ tailwind.config = {
           <div class="rounded-xl bg-black/45 border border-line p-3">
             <div class="text-amber-300 mb-1">🎯 목표</div>
             <ul class="space-y-1 text-slate-200 leading-snug">
-              <li>· 12턴 동안 인구를 지키며 생존하기</li>
+              <li>· 20턴 동안 인구를 지키며 생존하기</li>
               <li>· 5대 핵심 과학기술 모두 해금하기</li>
               <li>· 점수를 높여 <b>S등급</b> 달성하기</li>
               <li>· 인구 0명 또는 오염도 100% = <b class="text-rose-300">실패</b></li>
@@ -746,6 +892,17 @@ tailwind.config = {
             <span class="text-sky-300">💧 강에 접한 땅은 식량 +2</span>
             <span class="text-slate-400">— 인류 문명이 큰 강 유역에서 시작한 이유입니다.</span><br>
             <span class="text-slate-400">사막과 산은 처음엔 쓸모가 없지만 <b>질소 비료</b>(사막→관개지)와 <b>정보통신 기술</b>(산→통신소)을 개발하면 쓸 수 있게 됩니다.</span>
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-black/45 border border-line p-3 text-[13px] mt-2">
+          <div class="text-amber-300 mb-1">🔨 기술 개발은 제련에 도전하는 일입니다</div>
+          <div class="text-slate-200 leading-snug">
+            퀴즈를 맞히면 <b>제련</b>에 도전합니다. 망치를 세 번 두들긴 뒤 성공 여부가 드러납니다.<br>
+            <span class="text-slate-400">고도화된 기술일수록 성공 확률이 낮습니다 —
+            📜 90% · 🌾 75% · 🚂 60% · 💊 45% · 📡 30%</span><br>
+            <span class="text-slate-400">실패하면 비용의 절반과 행동력 1을 잃지만,
+            <b class="text-emerald-300">다음 도전 확률이 +12% 올라갑니다.</b> 도전할수록 가까워집니다.</span>
           </div>
         </div>
 
@@ -817,7 +974,7 @@ tailwind.config = {
     <div class="mt-3 rounded-xl bg-panel border border-line p-3">
       <div class="flex items-center justify-between mb-2">
         <span class="text-amber-300 text-sm">📊 점수 계산</span>
-        <span class="text-[11px] text-slate-400">S 1250 · A 1000 · B 750 · C 500</span>
+        <span class="text-[11px] text-slate-400">S 1700 · A 1350 · B 1000 · C 650</span>
       </div>
       <div id="endScoreRows" class="space-y-1 text-[13px]"></div>
     </div>
@@ -855,7 +1012,7 @@ tailwind.config = {
    사이언스 문명 빌더 — 게임 로직 (Vanilla JS)
    ========================================================= */
 
-const MAX_TURN = 12;
+const MAX_TURN = 20;
 
 /* ---------- 밸런스 상수 (교사용 난이도 조절 포인트) ----------
    POLL_PER_TURN : 증기기관 가동 시 매 턴 오염 증가량 (교과서 기본값 5)
@@ -875,6 +1032,7 @@ const BAL = { POLL_PER_TURN: 5, FOOD_BASE: 20, FOOD_FERT: 60 };
    · 권장: 건물·아이콘은 배경 투명 PNG, 배경은 JPG, 각 200KB 이하
    ========================================================= */
 const IMG = {
+  logo: 'images/logo.png',                     // 🖼️ 로고 (상단 헤더 + 타이틀 화면)
   titleBg: 'images/title-bg.jpg',              // 🖼️ 시작(타이틀) 화면 배경 그림
   mapBg: 'images/map-bg.jpg',                  // 맵 전체 배경
   terrain: {                                   // 지형 타일 텍스처
@@ -902,6 +1060,13 @@ const IMG = {
     steam: 'images/tech-steam.png',
     peni:  'images/tech-peni.png',
     ict:   'images/tech-ict.png'
+  },
+  techInfo: {                                  // 🖼️ 제련 성공 시 뜨는 설명 그림 (가로형 권장 800×450)
+    print: 'images/info-print.jpg',
+    fert:  'images/info-fert.jpg',
+    steam: 'images/info-steam.jpg',
+    peni:  'images/info-peni.jpg',
+    ict:   'images/info-ict.jpg'
   }
 };
 
@@ -1524,7 +1689,7 @@ function newState() {
     techs: { print: false, fert: false, steam: false, peni: false, ict: false },
     techTurn: {}, superstition: 0, protest: false,
     over: false, busy: false, quizId: null,
-    ap: 2, used: [], storeBonus: 0, built: {}, buildMode: false, choices: {},
+    ap: 2, used: [], storeBonus: 0, built: {}, buildMode: false, choices: {}, fails: {},
     war: null,
     schedule: makeSchedule(),                       // 이번 판의 위기 순서 (매번 다름)
     pendingSuperstition: false,
@@ -1633,7 +1798,7 @@ function warModal(turn) {
     [
       { label: '⚔️ 맞서 싸운다 <span class="text-[11px]">(승리 확률 ' + rate + '%)</span>',
         cls: 'bg-rose-400 border-rose-600 text-slate-900',
-        onClick: () => resolveWar(turn, mine, power, enemy) },
+        onClick: () => openBattle(turn, mine, power, enemy) },
       { label: '🤝 조공을 바쳐 전쟁을 피한다 <span class="text-[11px]">(🍎40 · 💡20)</span>' + (canTribute ? '' : ' <span class="text-[11px]">자원 부족</span>'),
         disabled: !canTribute,
         cls: 'bg-slate-500 border-slate-700 text-slate-900',
@@ -1647,11 +1812,68 @@ function warModal(turn) {
     ]);
 }
 
-function resolveWar(turn, mine, power, enemy) {
-  // 전력 비율만큼의 확률로 승패가 갈립니다 (2:1이면 2/3 확률로 승리)
+/* =========================================================
+   ⚔️ 전투 연출 — 3합을 겨룬 뒤 결과가 드러납니다
+   ========================================================= */
+function openBattle(turn, mine, power, enemy) {
   const rate = mine / (mine + power);
+  $('battleTitle').textContent = turn + '턴 · ' + enemy + '와(과)의 전투';
+  $('foeName').textContent = '🏴 ' + enemy;
+  $('powMine').textContent = mine;
+  $('powFoe').textContent = power;
+  $('hpMine').style.width = '100%';
+  $('hpFoe').style.width = '100%';
+  $('battleLog').textContent = '승리 확률 ' + Math.round(rate * 100) + '% — 운명을 가를 세 번의 격돌!';
+  $('battleResult').className = 'hidden';
+  $('battleResult').innerHTML = '';
+  $('clashFx').innerHTML = '';
+  $('battleGo').className = 'menu-btn w-full mt-3 rounded-xl border-b-4 border-rose-700 bg-gradient-to-b from-rose-400 to-rose-600 text-white py-3 text-lg';
+  $('battleClose').className = 'hidden';
+  $('battleModal').classList.remove('hidden');
+  $('battleModal').classList.add('flex');
+  $('battleGo').onclick = () => runBattle(turn, mine, power, enemy, rate);
+}
+
+function runBattle(turn, mine, power, enemy, rate) {
+  $('battleGo').className = 'hidden';
+  const L = $('fighterL'), R = $('fighterR'), fx = $('clashFx');
+  // 실제 승패를 먼저 정하고, 연출은 그 결과를 향해 흘러갑니다
   const roll = Math.random();
   const win = roll < rate;
+  let hpM = 100, hpF = 100;
+  const rounds = [
+    win ? 'foe' : 'mine',
+    Math.random() < rate ? 'foe' : 'mine',
+    win ? 'foe' : 'mine'
+  ];
+  const msg = ['첫 번째 격돌!', '두 번째 격돌!', '마지막 격돌!'];
+  let i = 0;
+
+  const clash = () => {
+    L.classList.remove('go'); R.classList.remove('go'); void L.offsetWidth;
+    L.classList.add('go'); R.classList.add('go');
+    $('battleLog').textContent = msg[i];
+    setTimeout(() => {
+      const e = document.createElement('div');
+      e.className = 'clash'; e.textContent = '💥';
+      fx.innerHTML = ''; fx.appendChild(e);
+      sfx('bad'); shake();
+      if (rounds[i] === 'foe') { hpF = Math.max(8, hpF - 30 - Math.random() * 12); $('hpFoe').style.width = hpF + '%'; }
+      else { hpM = Math.max(8, hpM - 30 - Math.random() * 12); $('hpMine').style.width = hpM + '%'; }
+      i++;
+      if (i < 3) setTimeout(clash, 620);
+      else setTimeout(() => resolveWar(turn, mine, power, enemy, win, roll), 700);
+    }, 280);
+  };
+  clash();
+}
+
+function resolveWar(turn, mine, power, enemy, forcedWin, forcedRoll) {
+  // 전력 비율만큼의 확률로 승패가 갈립니다 (2:1이면 2/3 확률로 승리)
+  const rate = mine / (mine + power);
+  const roll = forcedRoll !== undefined ? forcedRoll : Math.random();
+  const win = forcedWin !== undefined ? forcedWin : roll < rate;
+  $('battleModal').classList.add('hidden'); $('battleModal').classList.remove('flex');
   const pct = Math.round(rate * 100), rollPct = Math.round(roll * 100);
   const dice = '🎲 승리 확률 ' + pct + '% · 주사위 ' + rollPct + ' → <b>' + (win ? '승리' : '패배') + '</b>';
   const dead = Math.floor(S.pop * (win ? 0.1 : 0.3));
@@ -2179,25 +2401,166 @@ function answerQuiz(i, btn) {
   $('quizMsg').className = 'mt-3 text-sm min-h-[24px] text-center text-emerald-300 leading-snug';
   $('quizOpts').querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
 
+  // 퀴즈를 맞히면 곧바로 해금되지 않고, 제련(확률 도전) 화면으로 넘어갑니다
+  $('quizMsg').innerHTML += '<br><span class="text-amber-200 text-[13px]">이제 제련에 도전합니다!</span>';
+  setTimeout(() => {
+    closeQuiz();
+    openForge(t);
+  }, 1300);
+}
+
+/* =========================================================
+   🔨 기술 제련 — 고도화된 기술일수록 성공 확률이 낮습니다
+   실패해도 도전할수록 확률이 올라갑니다(재도전 보너스).
+   ========================================================= */
+const FORGE_RATE = { print: 0.90, fert: 0.75, steam: 0.60, peni: 0.45, ict: 0.30 };
+const PITY_STEP = 0.12;           // 실패 1회당 다음 확률 +12%
+const forgeRate = id => Math.min(0.95, (FORGE_RATE[id] || 0.6) + (S.fails[id] || 0) * PITY_STEP);
+
+function openForge(t) {
+  const rate = forgeRate(t.id), pity = S.fails[t.id] || 0;
+  $('forgeName').textContent = t.name;
+  $('forgeRate').textContent = Math.round(rate * 100) + '%';
+  $('forgeBar').style.width = Math.round(rate * 100) + '%';
+  $('forgePity').textContent = pity ? '재도전 보너스 +' + Math.round(pity * PITY_STEP * 100) + '%' : '';
+  $('forgeCore').innerHTML = svgIcon(t.sp, 44);
+  $('forgeCore').classList.add('heating');
+  $('forgeCost').innerHTML = '실패하면 <b class="text-rose-300">비용의 절반</b>을 잃고 다시 도전할 수 있습니다';
+  $('forgeResult').className = 'absolute inset-0 hidden flex-col items-center justify-center';
+  $('forgeResult').innerHTML = '';
+  $('forgeSparks').innerHTML = '';
+  $('forgeHammer').style.opacity = '1';
+  $('forgeGo').className = 'menu-btn w-full mt-3 rounded-xl border-b-4 border-amber-700 bg-gradient-to-b from-amber-300 to-amber-500 text-slate-900 py-3 text-lg';
+  $('forgeClose').className = 'hidden';
+  $('forgeModal').classList.remove('hidden');
+  $('forgeModal').classList.add('flex');
+
+  $('forgeGo').onclick = () => runForge(t, rate);
+}
+
+function spark(n) {
+  const box = $('forgeSparks'), w = box.clientWidth, h = box.clientHeight;
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('div');
+    s.className = 'spark';
+    s.style.left = (w / 2 - 6 + (Math.random() * 40 - 20)) + 'px';
+    s.style.top = (h - 62 + (Math.random() * 14 - 7)) + 'px';
+    s.style.setProperty('--sx', (Math.random() * 130 - 65) + 'px');
+    s.style.setProperty('--sy', (-30 - Math.random() * 60) + 'px');
+    box.appendChild(s);
+    setTimeout(() => s.remove(), 600);
+  }
+}
+
+/* 망치를 세 번 두들긴 뒤 결과가 나옵니다 */
+function runForge(t, rate) {
+  $('forgeGo').className = 'hidden';
+  const ham = $('forgeHammer'), anv = $('forgeAnvil');
+  let hits = 0;
+  const swing = () => {
+    hits++;
+    ham.classList.remove('swing'); void ham.offsetWidth; ham.classList.add('swing');
+    setTimeout(() => {
+      anv.classList.remove('hit'); void anv.offsetWidth; anv.classList.add('hit');
+      spark(10 + hits * 4); sfx('click'); shake();
+      if (hits < 3) setTimeout(swing, 260);
+      else setTimeout(() => finishForge(t, rate), 520);
+    }, 230);
+  };
+  swing();
+}
+
+function finishForge(t, rate) {
+  const ok = Math.random() < rate;
+  const box = $('forgeResult');
+  $('forgeCore').classList.remove('heating');
+  $('forgeHammer').style.opacity = '.25';
+
+  if (ok) {
+    S.fails[t.id] = 0;
+    spark(40); sfx('win');
+    try { confetti({ particleCount: 100, spread: 80, origin: { y: .55 } }); } catch (e) {}
+    box.className = 'absolute inset-0 flex flex-col items-center justify-center burst';
+    box.innerHTML = '<div class="text-6xl">✨</div><div class="font-title text-3xl text-amber-300 drop-shadow">제련 성공!</div>';
+    $('forgeCost').innerHTML = '<b class="text-emerald-300">' + t.name + '</b> 개발 완료!';
+    setTimeout(() => {
+      $('forgeModal').classList.add('hidden'); $('forgeModal').classList.remove('flex');
+      unlockTech(t);
+    }, 1150);
+  } else {
+    S.fails[t.id] = (S.fails[t.id] || 0) + 1;
+    const lostK = Math.floor(t.cost.k / 2), lostF = Math.floor(t.cost.f / 2);
+    S.know = Math.max(0, S.know - lostK);
+    S.food = Math.max(0, S.food - lostF);
+    S.ap = Math.max(0, S.ap - 1);
+    sfx('bad'); shake();
+    box.className = 'absolute inset-0 flex flex-col items-center justify-center crack';
+    box.innerHTML = '<div class="text-6xl">💥</div><div class="font-title text-3xl text-rose-300 drop-shadow">제련 실패…</div>';
+    $('forgeCost').innerHTML = '💡-' + lostK + (lostF ? ' 🍎-' + lostF : '') + ' 손실 · ' +
+      '<b class="text-emerald-300">다음 도전 확률 +' + Math.round(PITY_STEP * 100) + '%</b>';
+    log('💥 [제련 실패] ' + t.name + ' 개발에 실패했습니다. (💡-' + lostK + (lostF ? ' 🍎-' + lostF : '') +
+      ') 다음 도전 확률 ' + Math.round(forgeRate(t.id) * 100) + '%', 'bad', true);
+    bubble('아깝다… 다시 해보자!', 'warn', 150);
+    $('forgeClose').className = 'w-full mt-2 rounded-xl border-2 border-line bg-panel py-2.5 text-sm hover:bg-slate-700/40 transition';
+    $('forgeClose').onclick = () => {
+      $('forgeModal').classList.add('hidden'); $('forgeModal').classList.remove('flex');
+      render();
+    };
+  }
+}
+
+/* 제련 성공 직후 — 이 기술이 무엇이고 무엇을 바꿨는지 보여줍니다 */
+function showTechInfo(t, after) {
+  const s = SCI_NOTES.find(x => x.id === t.id);
+  const art = $('tiArt'), url = pic(IMG.techInfo[t.id]);
+  if (url) {
+    // 그림에 설명이 들어 있으므로 원본 비율 그대로(잘림 없이) 보여주고 글 설명은 감춥니다
+    $('tiArtImg').src = url;
+    $('tiArtImg').classList.remove('hidden');
+    art.classList.add('hidden');
+    $('tiText').classList.add('hidden');
+  } else {
+    $('tiArtImg').classList.add('hidden');
+    $('tiArtImg').removeAttribute('src');
+    art.classList.remove('hidden');
+    $('tiArtFallback').innerHTML = svgIcon(t.sp, 96) +
+      '<div class="text-[11px] text-slate-500 mt-2">images/info-' + t.id + '.jpg 를 넣으면 그림이 표시됩니다</div>';
+    $('tiText').classList.remove('hidden');
+  }
+  $('tiIcon').innerHTML = pic(IMG.tech[t.id])
+    ? '<img src="' + pic(IMG.tech[t.id]) + '" width="40" height="40" class="rounded object-contain" alt="">'
+    : svgIcon(t.sp, 40);
+  $('tiName').textContent = t.name;
+  $('tiWhen').textContent = s ? s.when + ' · ' + s.who : t.sub;
+  $('tiWhat').innerHTML = s ? s.what : '';
+  $('tiWhy').innerHTML = s ? s.why : '';
+  $('tiTwo').innerHTML = s ? s.two : '';
+  $('tiEffect').innerHTML = '✨ ' + t.effect + (t.side ? '<br><span class="text-rose-300">⚠️ ' + t.side + '</span>' : '');
+
+  $('techInfoModal').classList.remove('hidden');
+  $('techInfoModal').classList.add('flex');
+  $('tiClose').onclick = () => {
+    sfx('click');
+    $('techInfoModal').classList.add('hidden');
+    $('techInfoModal').classList.remove('flex');
+    after();
+  };
+}
+
+/* 실제 해금 처리 (제련 성공 시) */
+function unlockTech(t) {
   S.know -= t.cost.k;
   S.food -= t.cost.f;
   S.ap = Math.max(0, S.ap - 1);
   S.techs[t.id] = true;
   S.techTurn[t.id] = S.turn;
-  if (t.id === 'steam') S.protest = false;
   log('🔬 <b>' + t.name + '</b> 개발 성공! (💡-' + t.cost.k + (t.cost.f ? ' 🍎-' + t.cost.f : '') + ') → ' + t.effect, 'tech', true);
   showBanner('🔬 ' + t.name + ' 개발 완료! — ' + t.sub);
   bubble('드디어 ' + t.name + '이(가) 완성됐어!', 'good', 200);
-  floatText(t.icon, 'text-white', 100);
-  try { confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 }, disableForReducedMotion: true }); } catch (e) {}
-  if (techCount() === 5) {
-    log('🌟 5대 핵심 과학기술을 모두 확보했습니다! 지속 가능한 스마트 문명이 눈앞입니다.', 'good', true);
-  }
+  if (techCount() === 5) log('🌟 5대 핵심 과학기술을 모두 확보했습니다!', 'good', true);
   render();
-  setTimeout(() => {
-    closeQuiz();
-    askDilemma(t.id, () => { render(); });   // ⚖️ 이 기술을 어떻게 쓸까?
-  }, 1500);
+  // 기술 소개 → 양면성 선택 순서로 이어집니다
+  showTechInfo(t, () => askDilemma(t.id, () => render()));
 }
 
 /* =========================================================
@@ -2365,17 +2728,21 @@ const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.f
 const pickN = (arr, n) => shuffle(arr.slice()).slice(0, n);
 
 function makeSchedule() {
-  // 12턴 동안 위기 4종 + 전쟁 1회가 무작위 순서로 찾아옵니다
-  const early = shuffle(['famine', 'logistics']);      // 전반부에 올 수 있는 위기
-  const late  = shuffle(['plague', 'smog']);           // 후반부 위기
-  const earlyTurns = pickN([3, 4, 5], 2).sort((a, b) => a - b);
-  const lateTurns  = pickN([7, 9, 10, 11], 2).sort((a, b) => a - b);
-  const warTurn    = pickN([6, 8].filter(t => !lateTurns.includes(t)), 1)[0] || 8;
+  // 20턴 동안 위기 6건 + 전쟁 2회가 무작위 순서로 찾아옵니다
+  const early = shuffle(['famine', 'logistics']);      // 초반(3~7)
+  const mid   = shuffle(['plague', 'famine']);         // 중반(9~13)
+  const late  = shuffle(['smog', 'logistics']);        // 후반(15~19)
+  const earlyTurns = pickN([3, 4, 5, 6, 7], 2).sort((a, b) => a - b);
+  const midTurns   = pickN([9, 10, 11, 12, 13], 2).sort((a, b) => a - b);
+  const lateTurns  = pickN([15, 16, 17, 18, 19], 2).sort((a, b) => a - b);
+  const war1 = pickN([8].concat([6, 7].filter(t => !earlyTurns.includes(t))), 1)[0] || 8;
+  const war2 = pickN([14].concat([16, 17].filter(t => !lateTurns.includes(t))), 1)[0] || 14;
 
   const sc = {};
   earlyTurns.forEach((t, i) => sc[t] = early[i]);
+  midTurns.forEach((t, i) => sc[t] = mid[i]);
   lateTurns.forEach((t, i) => sc[t] = late[i]);
-  sc[warTurn] = 'war';                                 // 전쟁은 게임에 딱 한 번
+  sc[war1] = 'war'; sc[war2] = 'war';                  // 전쟁 2회
   return sc;
 }
 
@@ -2606,7 +2973,7 @@ function endTurn() {
 
   /* 11) 다음 턴 / 게임 종료 */
   if (S.turn >= MAX_TURN) {
-    log('🏁 12턴이 모두 끝났습니다. 문명의 역사를 정리합니다…', 'turn');
+    log('🏁 20턴이 모두 끝났습니다. 문명의 역사를 정리합니다…', 'turn');
     afterLogs(() => endGame(true));
     return;
   }
@@ -2661,10 +3028,10 @@ function calcScore(win) {
 
 function calcGrade(win, score) {
   if (!win) return { g: '실패', d: '문명이 무너졌습니다. 과학기술은 <b>생존의 조건</b>이었습니다. 다시 도전해 보세요!' };
-  if (score >= 1250) return { g: 'S', d: '완벽합니다! 기술·인구·환경 어느 하나 놓치지 않은 <b>지속 가능한 스마트 문명</b>입니다.' };
-  if (score >= 1000) return { g: 'A', d: '훌륭합니다! 과학기술로 위기를 넘기며 <b>튼튼한 문명</b>을 세웠습니다.' };
-  if (score >= 750)  return { g: 'B', d: '문명은 잘 살아남았습니다. 다만 더 챙길 수 있었던 부분이 남아 있습니다.' };
-  if (score >= 500)  return { g: 'C', d: '겨우 버텨냈습니다. 과학기술 투자가 부족해 위기마다 큰 피해를 입었습니다.' };
+  if (score >= 1700) return { g: 'S', d: '완벽합니다! 기술·인구·환경 어느 하나 놓치지 않은 <b>지속 가능한 스마트 문명</b>입니다.' };
+  if (score >= 1350) return { g: 'A', d: '훌륭합니다! 과학기술로 위기를 넘기며 <b>튼튼한 문명</b>을 세웠습니다.' };
+  if (score >= 1000) return { g: 'B', d: '문명은 잘 살아남았습니다. 다만 더 챙길 수 있었던 부분이 남아 있습니다.' };
+  if (score >= 650)  return { g: 'C', d: '겨우 버텨냈습니다. 과학기술 투자가 부족해 위기마다 큰 피해를 입었습니다.' };
   return { g: 'D', d: '문명이 무너졌습니다. 과학기술은 <b>생존의 조건</b>이었습니다. 다시 도전해 보세요!' };
 }
 
@@ -2680,7 +3047,7 @@ function endGame(win, reason) {
 
   $('endIcon').textContent = !win ? '💀' : (n === 5 ? '🏆' : '🏛️');
   $('endTitle').textContent = !win ? '문명 붕괴 (GAME OVER)'
-    : (n === 5 ? '지속 가능한 스마트 문명 달성!' : '12턴 생존 완료');
+    : (n === 5 ? '지속 가능한 스마트 문명 달성!' : '20턴 생존 완료');
   $('endSub').textContent = !win ? (reason || '문명이 무너졌습니다.')
     : (n === 5 ? '인류의 5대 과학기술이 모두 당신의 손에서 태어났습니다.' : '살아남았지만 인류의 잠재력을 다 펼치지는 못했습니다.');
   $('endGrade').textContent = g;
@@ -2797,6 +3164,15 @@ window.addEventListener('DOMContentLoaded', () => {
   boot();
   // 외부 이미지가 지정돼 있으면 불러온 뒤 다시 그림 (실패분은 내장 SVG 유지)
   preloadImages(() => {
+    // 🖼️ 로고 — 넣으면 상단 헤더와 타이틀 화면에 함께 적용됩니다
+    if (pic(IMG.logo)) {
+      $('brandLogo').innerHTML = '<img src="' + pic(IMG.logo) + '" alt="로고" ' +
+        'class="h-9 w-auto object-contain rounded-md" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))">';
+      const tl = $('titleLogo');
+      tl.className = 'mb-2 flex justify-center';
+      tl.innerHTML = '<img src="' + pic(IMG.logo) + '" alt="로고" ' +
+        'class="h-20 sm:h-24 w-auto object-contain rounded-xl" style="filter:drop-shadow(0 4px 14px rgba(0,0,0,.75))">';
+    }
     if (pic(IMG.titleBg)) {
       const bg = $('titleBg');
       bg.style.backgroundImage = 'url("' + pic(IMG.titleBg) + '")';
