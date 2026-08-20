@@ -1,0 +1,2876 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>문명 — 과학기술 에디션</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Jua&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { game: ['Jua', 'Do Hyeon', 'system-ui', 'sans-serif'] },
+      colors: {
+        ink: '#0b1220', panel: '#141d33', panel2: '#1c2745', line: '#2c3b63',
+        pop: '#7dd3fc', food: '#86efac', know: '#fde047', poll: '#c4b5fd'
+      }
+    }
+  }
+}
+</script>
+<style>
+  html, body { font-family: 'Jua', 'Do Hyeon', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+  /* 게임 제목·큰 헤딩용 서체 */
+  .font-title { font-family: 'Black Han Sans', 'Jua', sans-serif; letter-spacing: .02em; }
+  .title-glow {
+    background: linear-gradient(180deg,#fff7e0 0%,#f6d264 45%,#c9922a 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 3px 0 rgba(0,0,0,.55)) drop-shadow(0 0 22px rgba(246,210,100,.35));
+  }
+  .menu-btn {
+    font-family: 'Black Han Sans','Jua',sans-serif; letter-spacing: .03em;
+    transition: transform .12s ease, box-shadow .12s ease, background-color .15s;
+  }
+  .menu-btn:hover { transform: translateY(-2px); }
+  .menu-btn:active { transform: translateY(1px); }
+  body { background:
+      radial-gradient(1200px 600px at 20% -10%, #1e2b52 0%, transparent 60%),
+      radial-gradient(900px 500px at 90% 0%, #23324f 0%, transparent 55%),
+      #0b1220; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #0f172a; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb { background: #3b4a75; border-radius: 8px; }
+
+  @keyframes walk { 0%,100% { transform: translateX(0) } 50% { transform: translateX(16px) } }
+  @keyframes bob  { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+  @keyframes popIn { 0% { transform: scale(.6); opacity: 0 } 70% { transform: scale(1.06) } 100% { transform: scale(1); opacity: 1 } }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+  @keyframes fadeAway { to { opacity: 0; transform: translateY(-24px) } }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+  @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(250,204,21,.5) } 50% { box-shadow: 0 0 22px 6px rgba(250,204,21,.25) } }
+  @keyframes floatUp { from { opacity:1; transform: translateY(0) scale(1) } to { opacity:0; transform: translateY(-52px) scale(1.25) } }
+  @keyframes smog { 0%,100%{opacity:.55} 50%{opacity:1} }
+
+  .citizen { animation: walk 3.4s ease-in-out infinite; display:inline-block; }
+  .citizen .body { display:inline-block; animation: bob 1.6s ease-in-out infinite; }
+  .bubble { animation: popIn .28s ease-out forwards, fadeAway .6s ease-in 3.4s forwards; }
+  .logline { animation: slideIn .25s ease-out; }
+  .shake { animation: shake .45s ease-in-out; }
+  .glowbtn { animation: pulseGlow 2.4s ease-in-out infinite; }
+  .floater { animation: floatUp 1.5s ease-out forwards; }
+  .smoglayer { animation: smog 4s ease-in-out infinite; }
+
+  /* ---------- 육각 타일 맵 (SVG) ---------- */
+  #hexMap { display: block; }
+  #hexMap text { font-family: 'Jua', system-ui, sans-serif; paint-order: stroke; stroke: rgba(0,0,0,.55); stroke-width: 2.5px; stroke-linejoin: round; }
+  #hexTiles polygon { transition: fill .8s ease; }
+  #hexBld use { filter: drop-shadow(0 4px 3px rgba(0,0,0,.5)); }
+  #hexCits g { transition: transform .9s ease-in-out; }
+  #hexCits use { filter: drop-shadow(0 3px 2px rgba(0,0,0,.55)); }
+  #hexBorder path { filter: drop-shadow(0 0 4px rgba(245,158,11,.55)); }
+  #hexPick polygon { cursor: pointer; animation: pickPulse 1.6s ease-in-out infinite; }
+  #hexPick polygon:hover { fill-opacity: .42 !important; }
+  @keyframes pickPulse { 0%,100% { fill-opacity: .16 } 50% { fill-opacity: .34 } }
+  #hexMap text { user-select: none; }
+
+  /* ---------- 카드 뽑기 (뒤집기) ---------- */
+  .card3d { perspective: 900px; cursor: pointer; }
+  .card3d.done { cursor: default; }
+  .card-inner { position: relative; width: 100%; height: 148px; transition: transform .55s cubic-bezier(.4,.2,.2,1); transform-style: preserve-3d; }
+  .card3d.flipped .card-inner { transform: rotateY(180deg); }
+  .card3d:not(.flipped):hover .card-inner { transform: translateY(-6px) rotateZ(-1deg); }
+  .card-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 6px; text-align: center; border: 2px solid; }
+  .card-back { background: linear-gradient(145deg,#25406b,#16233d); border-color: #3f5f96; }
+  .card-back span { font-size: 34px; filter: drop-shadow(0 2px 4px #000); }
+  .card-front { transform: rotateY(180deg); }
+  .card-good { background: linear-gradient(145deg,#14432e,#0f2c20); border-color: #34d399; }
+  .card-bad  { background: linear-gradient(145deg,#4b1d22,#301216); border-color: #fb7185; }
+  .card3d.missed { opacity: .5; }
+  .iso-flag { animation: bob 1.2s ease-in-out infinite; }
+  .bobber { display: inline-block; }
+</style>
+</head>
+<body class="text-slate-100 min-h-screen overflow-x-hidden select-none">
+
+<!-- ==========================================================
+     인라인 SVG 스프라이트 시트 (외부 요청 0 · 오프라인 안전)
+     ========================================================== -->
+<svg id="sprites" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+<defs>
+  <linearGradient id="gRoof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0705f"/><stop offset="1" stop-color="#a03f36"/></linearGradient>
+  <linearGradient id="gWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2e7cd"/><stop offset="1" stop-color="#d2c19c"/></linearGradient>
+  <linearGradient id="gThatch" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d3a24a"/><stop offset="1" stop-color="#8f6226"/></linearGradient>
+  <linearGradient id="gStone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d6dbe4"/><stop offset="1" stop-color="#98a1ae"/></linearGradient>
+  <linearGradient id="gGlass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd8f2"/><stop offset="1" stop-color="#3f83b8"/></linearGradient>
+  <linearGradient id="gInd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a3acb8"/><stop offset="1" stop-color="#646c78"/></linearGradient>
+  <linearGradient id="gLeaf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#63ad5c"/><stop offset="1" stop-color="#2f6a37"/></linearGradient>
+  <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6d264"/><stop offset="1" stop-color="#c2902a"/></linearGradient>
+</defs>
+
+<!-- ---------- 지형 ---------- -->
+<symbol id="sp-tree" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="10" ry="3.2" fill="#000" opacity=".28"/>
+  <rect x="21.6" y="38" width="4.8" height="12" rx="1.6" fill="#6b4229"/>
+  <path d="M24 5 L35 25 H13Z" fill="url(#gLeaf)"/>
+  <path d="M24 5 L24 25 H13Z" fill="#4c8f4c" opacity=".55"/>
+  <path d="M24 17 L38 42 H10Z" fill="url(#gLeaf)"/>
+  <path d="M24 17 L24 42 H10Z" fill="#4c8f4c" opacity=".5"/>
+</symbol>
+<symbol id="sp-sprout" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="50" rx="11" ry="3" fill="#000" opacity=".2"/>
+  <path d="M18 50 q1-12 3-16" stroke="#5aa05a" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M24 50 q0-14 1-19" stroke="#6cb862" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M30 50 q-1-12-3-16" stroke="#5aa05a" stroke-width="3" fill="none" stroke-linecap="round"/>
+</symbol>
+<symbol id="sp-wheat" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="50" rx="12" ry="3" fill="#000" opacity=".22"/>
+  <g stroke="#b8891f" stroke-width="2.4" stroke-linecap="round" fill="none">
+    <path d="M17 50 V30"/><path d="M24 50 V25"/><path d="M31 50 V30"/>
+  </g>
+  <g fill="url(#gGold)">
+    <ellipse cx="17" cy="26" rx="4" ry="7"/><ellipse cx="24" cy="21" rx="4.2" ry="7.5"/><ellipse cx="31" cy="26" rx="4" ry="7"/>
+  </g>
+  <g stroke="#8a6414" stroke-width="1" opacity=".55">
+    <path d="M17 20v12M24 15v13M31 20v12"/>
+  </g>
+</symbol>
+
+<!-- ---------- 주거 ---------- -->
+<symbol id="sp-tent" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="13" ry="3.6" fill="#000" opacity=".3"/>
+  <path d="M24 12 L40 50 H8Z" fill="url(#gThatch)"/>
+  <path d="M24 12 L24 50 H8Z" fill="#e0b467" opacity=".45"/>
+  <path d="M24 26 L32 50 H16Z" fill="#3b2a1a" opacity=".75"/>
+  <path d="M24 8 L24 14" stroke="#6b4229" stroke-width="2.5" stroke-linecap="round"/>
+</symbol>
+<symbol id="sp-hut" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="14" ry="3.6" fill="#000" opacity=".3"/>
+  <rect x="13" y="31" width="22" height="19" fill="url(#gWall)"/>
+  <rect x="13" y="31" width="8" height="19" fill="#000" opacity=".1"/>
+  <path d="M24 10 L41 33 H7Z" fill="url(#gThatch)"/>
+  <path d="M24 10 L24 33 H7Z" fill="#e0b467" opacity=".4"/>
+  <rect x="21" y="39" width="7" height="11" rx="1" fill="#6b4229"/>
+  <rect x="15" y="35" width="5" height="4" rx="1" fill="#8fd0ef" opacity=".85"/>
+</symbol>
+<symbol id="sp-house" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="15" ry="3.8" fill="#000" opacity=".3"/>
+  <rect x="12" y="28" width="24" height="22" fill="url(#gWall)"/>
+  <rect x="12" y="28" width="9" height="22" fill="#000" opacity=".1"/>
+  <path d="M24 9 L42 30 H6Z" fill="url(#gRoof)"/>
+  <path d="M24 9 L24 30 H6Z" fill="#fff" opacity=".14"/>
+  <rect x="21" y="38" width="8" height="12" rx="1" fill="#7a4b2c"/>
+  <rect x="14" y="32" width="6" height="5" rx="1" fill="#8fd0ef"/>
+  <rect x="30" y="32" width="6" height="5" rx="1" fill="#8fd0ef" opacity=".8"/>
+  <rect x="31" y="12" width="4" height="8" fill="#8a5a3b"/>
+</symbol>
+<symbol id="sp-apartment" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="15" ry="3.8" fill="#000" opacity=".3"/>
+  <rect x="11" y="14" width="26" height="36" rx="1.5" fill="url(#gStone)"/>
+  <rect x="11" y="14" width="9" height="36" fill="#000" opacity=".1"/>
+  <g fill="#8fd0ef">
+    <rect x="15" y="19" width="6" height="5" rx="1"/><rect x="27" y="19" width="6" height="5" rx="1" opacity=".8"/>
+    <rect x="15" y="28" width="6" height="5" rx="1" opacity=".9"/><rect x="27" y="28" width="6" height="5" rx="1" opacity=".7"/>
+    <rect x="15" y="37" width="6" height="5" rx="1" opacity=".8"/><rect x="27" y="37" width="6" height="5" rx="1"/>
+  </g>
+  <rect x="20" y="44" width="8" height="6" rx="1" fill="#6b7280"/>
+</symbol>
+
+<!-- ---------- 중심 건물 (문명 단계) ---------- -->
+<symbol id="sp-c0" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="16" ry="4" fill="#000" opacity=".32"/>
+  <path d="M24 8 L42 50 H6Z" fill="url(#gThatch)"/>
+  <path d="M24 8 L24 50 H6Z" fill="#e6bd72" opacity=".45"/>
+  <path d="M24 24 L33 50 H15Z" fill="#3b2a1a" opacity=".78"/>
+  <circle cx="35" cy="44" r="3.5" fill="#e8663c"/><circle cx="35" cy="44" r="1.6" fill="#ffd166"/>
+</symbol>
+<symbol id="sp-c1" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="17" ry="4" fill="#000" opacity=".32"/>
+  <rect x="9" y="33" width="17" height="17" fill="url(#gWall)"/>
+  <path d="M17.5 16 L31 34 H4Z" fill="url(#gThatch)"/>
+  <rect x="26" y="37" width="14" height="13" fill="url(#gWall)"/>
+  <path d="M33 24 L44 38 H22Z" fill="url(#gThatch)"/>
+  <rect x="15" y="41" width="6" height="9" fill="#6b4229"/>
+  <rect x="31" y="43" width="5" height="7" fill="#6b4229"/>
+</symbol>
+<symbol id="sp-c2" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="18" ry="4.2" fill="#000" opacity=".32"/>
+  <rect x="6" y="46" width="36" height="5" fill="#b6bcc7"/>
+  <rect x="8" y="42" width="32" height="4" fill="url(#gStone)"/>
+  <g fill="url(#gStone)">
+    <rect x="11" y="24" width="5" height="18"/><rect x="19" y="24" width="5" height="18"/>
+    <rect x="27" y="24" width="5" height="18"/><rect x="35" y="24" width="4" height="18"/>
+  </g>
+  <path d="M24 8 L44 24 H4Z" fill="url(#gStone)"/>
+  <path d="M24 8 L24 24 H4Z" fill="#fff" opacity=".18"/>
+  <path d="M24 13 L35 22 H13Z" fill="#e0b44a" opacity=".9"/>
+</symbol>
+<symbol id="sp-c3" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="18" ry="4.2" fill="#000" opacity=".32"/>
+  <rect x="6" y="26" width="10" height="24" fill="url(#gStone)"/>
+  <rect x="32" y="26" width="10" height="24" fill="url(#gStone)"/>
+  <rect x="16" y="20" width="16" height="30" fill="url(#gStone)"/>
+  <rect x="16" y="20" width="6" height="30" fill="#000" opacity=".1"/>
+  <path d="M6 26 h10 v-5 h-3 v3 h-2 v-3 h-2 v3 h-3z" fill="#aeb6c2"/>
+  <path d="M32 26 h10 v-5 h-3 v3 h-2 v-3 h-2 v3 h-3z" fill="#aeb6c2"/>
+  <path d="M16 20 h16 v-5 h-4 v3 h-3 v-3 h-2 v3 h-3v-3h-4z" fill="#aeb6c2"/>
+  <path d="M24 4 L24 12" stroke="#8a5a3b" stroke-width="1.6"/><path d="M24 4 l9 3 l-9 3z" fill="#c94f43"/>
+  <path d="M20 38 h8 v12 h-8z" fill="#5c3d24"/>
+  <rect x="9" y="32" width="4" height="6" fill="#3c4654"/><rect x="35" y="32" width="4" height="6" fill="#3c4654"/>
+</symbol>
+<symbol id="sp-c4" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="16" ry="4" fill="#000" opacity=".32"/>
+  <rect x="8" y="30" width="12" height="20" fill="url(#gStone)"/>
+  <rect x="28" y="24" width="12" height="26" fill="url(#gStone)"/>
+  <rect x="18" y="10" width="14" height="40" fill="url(#gGlass)"/>
+  <rect x="18" y="10" width="5" height="40" fill="#fff" opacity=".18"/>
+  <g fill="#22384a" opacity=".55">
+    <rect x="20" y="14" width="10" height="3"/><rect x="20" y="21" width="10" height="3"/>
+    <rect x="20" y="28" width="10" height="3"/><rect x="20" y="35" width="10" height="3"/><rect x="20" y="42" width="10" height="3"/>
+  </g>
+  <g fill="#8fd0ef" opacity=".9"><rect x="10" y="34" width="8" height="3"/><rect x="30" y="28" width="8" height="3"/><rect x="30" y="36" width="8" height="3"/></g>
+</symbol>
+<symbol id="sp-c5" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="17" ry="4.2" fill="#000" opacity=".32"/>
+  <rect x="7" y="32" width="11" height="18" rx="1" fill="url(#gGlass)"/>
+  <rect x="30" y="28" width="11" height="22" rx="1" fill="url(#gGlass)"/>
+  <rect x="18" y="8" width="12" height="42" rx="1.5" fill="url(#gGlass)"/>
+  <rect x="18" y="8" width="4" height="42" fill="#fff" opacity=".22"/>
+  <rect x="17" y="4" width="14" height="4" rx="1.5" fill="#4f9152"/>
+  <path d="M24 4 V-1" stroke="#cbd5e1" stroke-width="1.4"/>
+  <g fill="#1f3a4d" opacity=".5"><rect x="20" y="13" width="8" height="2.6"/><rect x="20" y="20" width="8" height="2.6"/><rect x="20" y="27" width="8" height="2.6"/><rect x="20" y="34" width="8" height="2.6"/><rect x="20" y="41" width="8" height="2.6"/></g>
+  <g fill="#2e7d5b"><rect x="6" y="29" width="13" height="3" rx="1.2"/><rect x="29" y="25" width="13" height="3" rx="1.2"/></g>
+  <g stroke="#7dd3fc" stroke-width="1.4" fill="none" opacity=".9"><path d="M33 12 a6 6 0 0 1 6 6"/><path d="M33 8 a10 10 0 0 1 10 10"/></g>
+</symbol>
+
+<!-- ---------- 기술 건물 ---------- -->
+<symbol id="sp-library" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="16" ry="3.8" fill="#000" opacity=".3"/>
+  <rect x="8" y="44" width="32" height="6" fill="#b6bcc7"/>
+  <rect x="10" y="24" width="28" height="20" fill="url(#gWall)"/>
+  <g fill="url(#gStone)"><rect x="13" y="26" width="4" height="18"/><rect x="22" y="26" width="4" height="18"/><rect x="31" y="26" width="4" height="18"/></g>
+  <path d="M24 10 L42 24 H6Z" fill="url(#gRoof)"/>
+  <path d="M24 10 L24 24 H6Z" fill="#fff" opacity=".14"/>
+  <g transform="translate(24 18)">
+    <path d="M-6 -3 h5 v6 h-5z" fill="#f8f4e6"/><path d="M1 -3 h5 v6 h-5z" fill="#e6dcc4"/>
+    <path d="M0 -4 v8" stroke="#8a5a3b" stroke-width="1.2"/>
+  </g>
+</symbol>
+<symbol id="sp-factory" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="17" ry="4" fill="#000" opacity=".3"/>
+  <rect x="6" y="30" width="30" height="20" fill="url(#gInd)"/>
+  <path d="M6 30 l7-8 v8z M15 30 l7-8 v8z M24 30 l7-8 v8z" fill="#8b95a2"/>
+  <rect x="34" y="16" width="6" height="34" fill="#7b8590"/>
+  <rect x="33" y="14" width="8" height="3" rx="1" fill="#5f6a75"/>
+  <g fill="#ffd166" opacity=".95"><rect x="10" y="38" width="5" height="5" rx="1"/><rect x="19" y="38" width="5" height="5" rx="1"/><rect x="28" y="38" width="5" height="5" rx="1"/></g>
+  <g fill="#cbd5e1" opacity=".55"><circle cx="37" cy="9" r="4"/><circle cx="42" cy="4" r="3"/><circle cx="32" cy="5" r="2.5"/></g>
+</symbol>
+<symbol id="sp-train" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="50" rx="17" ry="3.4" fill="#000" opacity=".3"/>
+  <rect x="6" y="44" width="36" height="3" rx="1" fill="#6b7280"/>
+  <rect x="10" y="26" width="24" height="16" rx="2" fill="#b8483d"/>
+  <rect x="10" y="26" width="24" height="5" rx="2" fill="#d8695c"/>
+  <rect x="34" y="32" width="8" height="10" rx="1.5" fill="#8b3f36"/>
+  <rect x="13" y="20" width="7" height="8" rx="1" fill="#4a5560"/>
+  <rect x="12" y="17" width="9" height="3" rx="1.2" fill="#3c4654"/>
+  <g fill="#8fd0ef"><rect x="23" y="31" width="5" height="5" rx="1"/><rect x="36" y="35" width="4" height="4" rx="1"/></g>
+  <g fill="#374151"><circle cx="16" cy="43" r="4"/><circle cx="27" cy="43" r="4"/><circle cx="38" cy="43" r="3"/></g>
+  <g fill="#9ca3af"><circle cx="16" cy="43" r="1.6"/><circle cx="27" cy="43" r="1.6"/></g>
+  <g fill="#cbd5e1" opacity=".5"><circle cx="18" cy="12" r="3.2"/><circle cx="23" cy="8" r="2.4"/></g>
+</symbol>
+<symbol id="sp-hospital" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="15" ry="3.8" fill="#000" opacity=".3"/>
+  <rect x="10" y="20" width="28" height="30" rx="1.5" fill="#f4f6f9"/>
+  <rect x="10" y="20" width="9" height="30" fill="#000" opacity=".07"/>
+  <rect x="10" y="20" width="28" height="6" fill="#dbe2ea"/>
+  <g fill="#d1454a"><rect x="21" y="9" width="6" height="14" rx="1"/><rect x="17" y="13" width="14" height="6" rx="1"/></g>
+  <g fill="#8fd0ef"><rect x="14" y="30" width="6" height="5" rx="1"/><rect x="28" y="30" width="6" height="5" rx="1"/><rect x="14" y="39" width="6" height="5" rx="1"/><rect x="28" y="39" width="6" height="5" rx="1"/></g>
+  <rect x="21" y="41" width="6" height="9" rx="1" fill="#9aa5b1"/>
+</symbol>
+<symbol id="sp-antenna" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="14" ry="3.6" fill="#000" opacity=".3"/>
+  <path d="M18 50 L22 16 h4 L30 50z" fill="#9aa5b1"/>
+  <g stroke="#7b8590" stroke-width="1.6"><path d="M19 42 h10M20 34 h8M21 26 h6"/></g>
+  <ellipse cx="24" cy="14" rx="9" ry="4" fill="url(#gStone)"/>
+  <ellipse cx="24" cy="13" rx="6" ry="2.6" fill="#5b6673"/>
+  <g stroke="#7dd3fc" stroke-width="1.6" fill="none"><path d="M31 9 a8 8 0 0 1 4 6"/><path d="M34 5 a13 13 0 0 1 6 10"/></g>
+</symbol>
+
+<!-- ---------- 시민이 짓는 시설 ---------- -->
+<symbol id="sp-mine" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="14" ry="3.6" fill="#000" opacity=".3"/>
+  <path d="M10 50 L14 30 h20 l4 20z" fill="#8b8271"/>
+  <path d="M10 50 L14 30 h10 v20z" fill="#a49b8b"/>
+  <path d="M14 30 h20 l-3 -6 h-14z" fill="#5f6773"/>
+  <path d="M18 50 v-10 a6 6 0 0 1 12 0 v10z" fill="#2f2a24"/>
+  <g stroke="#c9a227" stroke-width="2.6" stroke-linecap="round">
+    <path d="M31 22 L39 14"/><path d="M35 10 l6 6"/>
+  </g>
+  <g fill="#e0b44a"><circle cx="20" cy="45" r="2"/><circle cx="27" cy="47" r="1.6"/></g>
+</symbol>
+<symbol id="sp-lumber" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="51" rx="14" ry="3.6" fill="#000" opacity=".3"/>
+  <g fill="#8a5a3b"><rect x="8" y="38" width="26" height="7" rx="3.5"/><rect x="12" y="30" width="26" height="7" rx="3.5"/></g>
+  <g fill="#c69a6d"><ellipse cx="34" cy="41.5" rx="2.6" ry="3.5"/><ellipse cx="38" cy="33.5" rx="2.6" ry="3.5"/></g>
+  <g stroke="#7a4b2c" stroke-width="1" fill="none"><ellipse cx="34" cy="41.5" rx="1.3" ry="1.8"/><ellipse cx="38" cy="33.5" rx="1.3" ry="1.8"/></g>
+  <path d="M14 46 L22 22" stroke="#5f6773" stroke-width="3" stroke-linecap="round"/>
+  <path d="M20 24 l8 -6 l4 5 l-8 6z" fill="#b8bfc9"/>
+</symbol>
+
+<!-- ---------- 상태 표시 ---------- -->
+<symbol id="sp-flag" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="50" rx="8" ry="2.6" fill="#000" opacity=".28"/>
+  <rect x="22" y="10" width="3" height="40" rx="1.2" fill="#8a5a3b"/>
+  <path d="M25 12 L42 18 L25 24z" fill="#e0b44a"/>
+  <path d="M25 12 L42 18 L25 18z" fill="#f6d264"/>
+</symbol>
+<symbol id="sp-chain" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="50" rx="9" ry="2.6" fill="#000" opacity=".28"/>
+  <g fill="none" stroke="#8b93a1" stroke-width="4.5">
+    <ellipse cx="18" cy="30" rx="6" ry="9"/><ellipse cx="30" cy="40" rx="6" ry="9"/>
+  </g>
+  <g fill="none" stroke="#5f6773" stroke-width="1.4">
+    <ellipse cx="18" cy="30" rx="6" ry="9"/><ellipse cx="30" cy="40" rx="6" ry="9"/>
+  </g>
+</symbol>
+<symbol id="sp-protest" viewBox="0 0 48 56">
+  <ellipse cx="24" cy="50" rx="8" ry="2.6" fill="#000" opacity=".28"/>
+  <rect x="22" y="24" width="3" height="26" rx="1.2" fill="#8a5a3b"/>
+  <rect x="10" y="8" width="28" height="18" rx="2" fill="#f4f1e6"/>
+  <g stroke="#5b6673" stroke-width="2.4" stroke-linecap="round"><path d="M15 14 h18M15 20 h12"/></g>
+</symbol>
+
+<!-- ---------- 시민 ---------- -->
+<symbol id="sp-p-farmer" viewBox="0 0 32 40">
+  <ellipse cx="16" cy="36" rx="7" ry="2.4" fill="#000" opacity=".32"/>
+  <path d="M10 36 v-13 a6 6 0 0 1 12 0 v13z" fill="#5f9e57"/>
+  <path d="M10 36 v-13 a6 6 0 0 1 6 -6 v19z" fill="#000" opacity=".1"/>
+  <circle cx="16" cy="13" r="5.6" fill="#f0c9a0"/>
+  <ellipse cx="16" cy="9.5" rx="9" ry="2.6" fill="#d9a441"/>
+  <path d="M11 10 a5 5 0 0 1 10 0z" fill="#e9b757"/>
+</symbol>
+<symbol id="sp-p-scholar" viewBox="0 0 32 40">
+  <ellipse cx="16" cy="36" rx="7" ry="2.4" fill="#000" opacity=".32"/>
+  <path d="M10 36 v-13 a6 6 0 0 1 12 0 v13z" fill="#4d5fa8"/>
+  <path d="M10 36 v-13 a6 6 0 0 1 6 -6 v19z" fill="#000" opacity=".1"/>
+  <circle cx="16" cy="13" r="5.6" fill="#f0c9a0"/>
+  <path d="M9 10 h14 v2 h-14z" fill="#2f3a63"/><path d="M16 6 l8 4 l-8 4 l-8-4z" fill="#3c4a7d"/>
+  <rect x="19" y="24" width="7" height="9" rx="1" fill="#f4f1e6" transform="rotate(8 22 28)"/>
+</symbol>
+<symbol id="sp-p-worker" viewBox="0 0 32 40">
+  <ellipse cx="16" cy="36" rx="7" ry="2.4" fill="#000" opacity=".32"/>
+  <path d="M10 36 v-13 a6 6 0 0 1 12 0 v13z" fill="#c2762f"/>
+  <path d="M10 36 v-13 a6 6 0 0 1 6 -6 v19z" fill="#000" opacity=".1"/>
+  <circle cx="16" cy="13" r="5.6" fill="#f0c9a0"/>
+  <path d="M9.6 11 a6.4 6.4 0 0 1 12.8 0z" fill="#f2c14e"/>
+  <rect x="8.5" y="10.6" width="15" height="2.2" rx="1" fill="#e0a92f"/>
+</symbol>
+<symbol id="sp-p-doctor" viewBox="0 0 32 40">
+  <ellipse cx="16" cy="36" rx="7" ry="2.4" fill="#000" opacity=".32"/>
+  <path d="M10 36 v-13 a6 6 0 0 1 12 0 v13z" fill="#f2f5f8"/>
+  <path d="M10 36 v-13 a6 6 0 0 1 6 -6 v19z" fill="#000" opacity=".07"/>
+  <g fill="#d1454a"><rect x="14.6" y="24" width="2.8" height="8" rx=".8"/><rect x="12" y="26.6" width="8" height="2.8" rx=".8"/></g>
+  <circle cx="16" cy="13" r="5.6" fill="#f0c9a0"/>
+  <path d="M10.4 11 a5.6 5.6 0 0 1 11.2 0z" fill="#e8eef4"/>
+</symbol>
+<symbol id="sp-p-tech" viewBox="0 0 32 40">
+  <ellipse cx="16" cy="36" rx="7" ry="2.4" fill="#000" opacity=".32"/>
+  <path d="M10 36 v-13 a6 6 0 0 1 12 0 v13z" fill="#3f9aa8"/>
+  <path d="M10 36 v-13 a6 6 0 0 1 6 -6 v19z" fill="#000" opacity=".1"/>
+  <circle cx="16" cy="13" r="5.6" fill="#f0c9a0"/>
+  <path d="M10.4 12 a5.6 5.6 0 0 1 11.2 0 v-1 a5.6 5.6 0 0 0 -11.2 0z" fill="#3d4756"/>
+  <rect x="18" y="23" width="8" height="6" rx="1" fill="#7dd3fc" transform="rotate(-10 22 26)"/>
+</symbol>
+<symbol id="sp-mood-hungry" viewBox="0 0 16 16">
+  <circle cx="8" cy="8" r="7" fill="#e0574f" stroke="#fff" stroke-width="1.4"/>
+  <rect x="7" y="4" width="2" height="5" rx="1" fill="#fff"/><circle cx="8" cy="11.4" r="1.2" fill="#fff"/>
+</symbol>
+<symbol id="sp-mood-sick" viewBox="0 0 16 16">
+  <circle cx="8" cy="8" r="7" fill="#7f8b99" stroke="#fff" stroke-width="1.4"/>
+  <rect x="3" y="6.5" width="10" height="5" rx="1.6" fill="#fff"/>
+  <path d="M3 8 h10" stroke="#c8d0d8" stroke-width="1"/>
+</symbol>
+
+<!-- ---------- 5대 기술 아이콘 ---------- -->
+<symbol id="sp-t-print" viewBox="0 0 48 48">
+  <rect x="8" y="20" width="32" height="16" rx="2" fill="url(#gInd)"/>
+  <rect x="12" y="6" width="24" height="14" rx="1.5" fill="#8a5a3b"/>
+  <rect x="15" y="9" width="18" height="8" rx="1" fill="#e8dcc3"/>
+  <g stroke="#8a6a45" stroke-width="1.4"><path d="M17 12 h14M17 15 h10"/></g>
+  <rect x="10" y="34" width="28" height="9" rx="1.5" fill="#f4f1e6"/>
+  <g stroke="#b3a88c" stroke-width="1.4"><path d="M14 38 h20M14 41 h14"/></g>
+</symbol>
+<symbol id="sp-t-fert" viewBox="0 0 48 48">
+  <g stroke="#b8891f" stroke-width="2.6" stroke-linecap="round" fill="none"><path d="M16 42 V22"/><path d="M24 42 V16"/><path d="M32 42 V22"/></g>
+  <g fill="url(#gGold)"><ellipse cx="16" cy="19" rx="4.5" ry="8"/><ellipse cx="24" cy="13" rx="4.8" ry="8.5"/><ellipse cx="32" cy="19" rx="4.5" ry="8"/></g>
+  <path d="M6 26 v8 a5 5 0 0 0 10 0 v-8z" fill="#8fd0ef" opacity=".9"/>
+  <rect x="7.5" y="20" width="7" height="7" rx="1" fill="#cfe9f7"/>
+  <path d="M6 30 h10" stroke="#4f93c4" stroke-width="1.4"/>
+</symbol>
+<symbol id="sp-t-steam" viewBox="0 0 48 48">
+  <rect x="4" y="36" width="40" height="4" rx="1.5" fill="#6b7280"/>
+  <rect x="9" y="18" width="24" height="15" rx="2" fill="#b8483d"/>
+  <rect x="9" y="18" width="24" height="5" rx="2" fill="#d8695c"/>
+  <rect x="33" y="23" width="9" height="10" rx="1.5" fill="#8b3f36"/>
+  <rect x="12" y="11" width="7" height="8" rx="1" fill="#4a5560"/>
+  <rect x="11" y="8" width="9" height="3" rx="1.2" fill="#3c4654"/>
+  <g fill="#8fd0ef"><rect x="22" y="23" width="6" height="5" rx="1"/></g>
+  <g fill="#374151"><circle cx="15" cy="34" r="4.5"/><circle cx="27" cy="34" r="4.5"/><circle cx="38" cy="34" r="3.5"/></g>
+  <g fill="#cbd5e1" opacity=".6"><circle cx="17" cy="5" r="3.4"/><circle cx="23" cy="3" r="2.4"/></g>
+</symbol>
+<symbol id="sp-t-peni" viewBox="0 0 48 48">
+  <g transform="rotate(-35 24 24)">
+    <rect x="10" y="18" width="28" height="13" rx="6.5" fill="#f4f6f9" stroke="#c8d0d8" stroke-width="1.2"/>
+    <path d="M24 18 h7.5 a6.5 6.5 0 0 1 0 13 H24z" fill="#d1454a"/>
+  </g>
+  <g fill="#5fa85f" opacity=".95"><circle cx="11" cy="38" r="4"/><circle cx="18" cy="41" r="3"/><circle cx="6" cy="42" r="2.6"/></g>
+</symbol>
+<symbol id="sp-t-ict" viewBox="0 0 48 48">
+  <circle cx="24" cy="26" r="13" fill="url(#gGlass)"/>
+  <g stroke="#e8f6ff" stroke-width="1.3" fill="none" opacity=".85">
+    <ellipse cx="24" cy="26" rx="13" ry="5.5"/><ellipse cx="24" cy="26" rx="5.5" ry="13"/><path d="M11 26 h26"/>
+  </g>
+  <g fill="#fde047"><circle cx="18" cy="21" r="2.2"/><circle cx="30" cy="30" r="2.2"/><circle cx="27" cy="19" r="1.8"/></g>
+  <g stroke="#7dd3fc" stroke-width="1.8" fill="none"><path d="M36 10 a8 8 0 0 1 4 6"/><path d="M39 5 a13 13 0 0 1 6 10"/></g>
+</symbol>
+
+<!-- ---------- 대시보드 아이콘 ---------- -->
+<symbol id="sp-ui-pop" viewBox="0 0 32 32">
+  <circle cx="11" cy="11" r="5" fill="#7dd3fc"/><path d="M2 27 a9 9 0 0 1 18 0z" fill="#7dd3fc"/>
+  <circle cx="22" cy="12" r="4.2" fill="#38bdf8" opacity=".9"/><path d="M14 27 a8 8 0 0 1 16 0z" fill="#38bdf8" opacity=".9"/>
+</symbol>
+<symbol id="sp-ui-food" viewBox="0 0 32 32">
+  <path d="M16 9 c-5-4-13-1-13 8 c0 7 6 13 9 13 c2 0 3-1 4-1 c1 0 2 1 4 1 c3 0 9-6 9-13 c0-9-8-12-13-8z" fill="#d94f45"/>
+  <path d="M16 9 c-5-4-13-1-13 8 c0 7 6 13 9 13 c1 0 2-.4 3-.7z" fill="#fff" opacity=".18"/>
+  <path d="M16 9 c0-4 2-6 5-7 c0 4-2 6-5 7z" fill="#4f9152"/>
+  <rect x="15.2" y="4" width="1.8" height="6" rx=".9" fill="#7a5230"/>
+</symbol>
+<symbol id="sp-ui-know" viewBox="0 0 32 32">
+  <path d="M16 3 a10 10 0 0 1 6 18 v3 h-12 v-3 a10 10 0 0 1 6 -18z" fill="#fde047"/>
+  <path d="M16 3 a10 10 0 0 0 -6 18 v3 h6z" fill="#fff" opacity=".25"/>
+  <rect x="11" y="25" width="10" height="3" rx="1.4" fill="#9aa5b1"/>
+  <rect x="12.5" y="28.5" width="7" height="2.5" rx="1.2" fill="#6b7280"/>
+</symbol>
+<symbol id="sp-ui-poll" viewBox="0 0 32 32">
+  <g fill="#c4b5fd"><circle cx="11" cy="18" r="6"/><circle cx="20" cy="16" r="7"/><circle cx="25" cy="21" r="5"/><rect x="6" y="18" width="21" height="7" rx="3.5"/></g>
+  <g fill="#8b7fd6" opacity=".75"><circle cx="13" cy="9" r="3"/><circle cx="19" cy="6" r="2.2"/></g>
+</symbol>
+</svg>
+
+
+<!-- 태블릿(가로)에서는 스크롤 없이 한 화면에 모두 들어갑니다 -->
+<div class="mx-auto max-w-[1600px] p-2 lg:p-2.5 lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
+
+  <!-- ================= HEADER / DASHBOARD ================= -->
+  <header class="mb-2 lg:shrink-0">
+    <div class="flex items-end justify-between gap-3 flex-wrap mb-2">
+      <div class="flex items-center gap-2">
+        <span class="text-3xl">🔬</span>
+        <div>
+          <h1 class="font-title text-xl lg:text-2xl leading-tight text-white tracking-wide">문명 <span class="text-amber-300 text-sm">과학기술 에디션</span></h1>
+          <p class="text-[11px] lg:text-xs text-slate-400 -mt-0.5">중3 과학 · 과학기술과 인류 문명</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="rounded-xl bg-panel2 border-2 border-line px-4 py-2 text-center">
+          <div class="text-[10px] text-slate-400 leading-none">TURN</div>
+          <div class="text-xl leading-tight"><span id="s-turn">1</span> <span class="text-slate-500 text-sm">/ <span id="s-maxturn">12</span></span></div>
+        </div>
+        <button id="helpBtn" class="rounded-xl bg-panel border-2 border-line px-3 py-3 text-sm hover:bg-panel2 active:scale-95 transition">❓</button>
+        <button id="resetBtn" title="처음부터 다시하기" class="rounded-xl bg-panel border-2 border-line px-3 py-3 text-sm hover:bg-rose-900/40 hover:border-rose-600 active:scale-95 transition">🔄</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-2">
+      <div class="rounded-xl bg-panel border-2 border-line p-2.5 flex items-center gap-3">
+        <svg width="32" height="32" class="shrink-0"><use href="#sp-ui-pop"/></svg>
+        <div class="flex-1 min-w-0">
+          <div class="text-[11px] text-slate-400 leading-none">인구</div>
+          <div class="text-2xl leading-tight text-pop"><span id="s-pop">10</span><span class="text-sm text-slate-400">명</span></div>
+        </div>
+      </div>
+      <div class="rounded-xl bg-panel border-2 border-line p-2.5 flex items-center gap-3">
+        <svg width="32" height="32" class="shrink-0"><use href="#sp-ui-food"/></svg>
+        <div class="flex-1 min-w-0">
+          <div class="text-[11px] text-slate-400 leading-none">식량 <span class="text-slate-500">(창고)</span></div>
+          <div class="text-2xl leading-tight text-food"><span id="s-food">50</span><span class="text-sm text-slate-400">/<span id="s-foodmax">100</span></span></div>
+          <div class="h-1.5 w-full bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="foodBar" class="h-full bg-emerald-400 rounded-full transition-all duration-500" style="width:50%"></div></div>
+        </div>
+      </div>
+      <div class="rounded-xl bg-panel border-2 border-line p-2.5 flex items-center gap-3">
+        <svg width="32" height="32" class="shrink-0"><use href="#sp-ui-know"/></svg>
+        <div class="flex-1 min-w-0">
+          <div class="text-[11px] text-slate-400 leading-none">지식 <span id="s-kgain" class="text-slate-500"></span></div>
+          <div class="text-2xl leading-tight text-know"><span id="s-know">20</span></div>
+        </div>
+      </div>
+      <div class="rounded-xl bg-panel border-2 border-line p-2.5 flex items-center gap-3">
+        <svg width="32" height="32" id="pollIcon" class="shrink-0 transition-all duration-500"><use href="#sp-ui-poll"/></svg>
+        <div class="flex-1 min-w-0">
+          <div class="text-[11px] text-slate-400 leading-none">환경 오염도</div>
+          <div class="text-2xl leading-tight text-poll"><span id="s-poll">0</span><span class="text-sm text-slate-400">%</span></div>
+          <div class="h-1.5 w-full bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="pollBar" class="h-full bg-violet-400 rounded-full transition-all duration-500" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="rounded-xl bg-panel border-2 border-line p-2.5 flex items-center gap-3 col-span-2 lg:col-span-1">
+        <span class="text-3xl shrink-0">⚔️</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-[11px] text-slate-400 leading-none">국력 <span class="text-slate-500">(인구+기술)</span></div>
+          <div class="text-2xl leading-tight text-rose-300"><span id="powerNum">5</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 다가오는 위기 예고 -->
+    <div id="forecast" class="hidden"></div>
+  </header>
+
+  <!-- ================= MAIN ================= -->
+  <main class="grid grid-cols-1 lg:grid-cols-12 gap-1.5 xl:gap-2 lg:flex-1 lg:min-h-0">
+
+    <!-- ---------- LEFT : 문명 시각화 + 시민 + 로그 ---------- -->
+    <section class="lg:col-span-4 xl:col-span-5 flex flex-col gap-1.5 xl:gap-2 lg:min-h-0">
+
+      <div class="relative rounded-2xl border-2 border-line bg-[#0c1424] overflow-hidden lg:shrink-0">
+        <!-- 상단 정보 띠 -->
+        <div class="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-3 py-2 bg-gradient-to-b from-black/75 via-black/40 to-transparent pointer-events-none">
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] px-2 py-1 rounded-lg bg-black/60 border border-line text-slate-300">문명 단계</span>
+            <span id="eraName" class="text-lg text-white" style="text-shadow:0 2px 6px #000">원시 정착지</span>
+            <span id="colonyBadge" class="hidden text-[11px] px-2 py-1 rounded-lg border"></span>
+          </div>
+          <div id="techBadges" class="flex gap-1 text-lg"></div>
+        </div>
+        <!-- 사건 배너 (문명 스타일) -->
+        <div id="mapBanner" class="hidden absolute top-[46px] left-1/2 -translate-x-1/2 z-30 max-w-[92%] px-4 py-1.5 rounded-lg bg-black/75 border border-amber-400/70 text-amber-200 text-[13px] text-center whitespace-nowrap overflow-hidden text-ellipsis" style="animation:popIn .3s ease-out"></div>
+
+        <!-- 육각 타일 맵 (SVG) -->
+        <div class="relative h-[210px] sm:h-[240px] xl:h-[262px] overflow-hidden bg-gradient-to-b from-[#14243d] to-[#0a1120]">
+          <svg id="hexMap" class="absolute inset-0 w-full h-full transition-all duration-700"
+               viewBox="0 0 832 392" preserveAspectRatio="xMidYMid meet">
+            <defs id="hexDefs"></defs>
+            <g id="hexTiles"></g>
+            <g id="hexFeatures"></g>
+            <g id="hexBorder"></g>
+            <g id="hexBld"></g>
+            <g id="hexPick"></g>
+            <g id="hexCits"></g>
+            <g id="hexLabels"></g>
+          </svg>
+          <div id="smogLayer" class="smoglayer pointer-events-none absolute inset-0 z-20 bg-gradient-to-b from-slate-400/45 to-yellow-800/35 transition-opacity duration-700" style="opacity:0"></div>
+          <div id="bubbleLayer" class="absolute inset-0 z-40 pointer-events-none"></div>
+          <div id="floatLayer" class="absolute inset-0 z-40 pointer-events-none flex items-center justify-center"></div>
+        </div>
+
+        <!-- 하단 시민 HUD -->
+        <div class="flex items-center gap-2 px-3 py-2 border-t-2 border-line bg-panel">
+          <span id="hudFace" class="text-2xl shrink-0">🧑‍🌾</span>
+          <div class="min-w-0 flex-1">
+            <div class="text-[10px] text-slate-400 leading-none">시민의 목소리</div>
+            <div id="hudQuote" class="text-[13px] text-slate-200 truncate">여기서 우리 문명을 시작하자!</div>
+          </div>
+          <span id="hudMood" class="shrink-0 text-[11px] px-2 py-1 rounded-lg border border-line bg-panel2 text-emerald-300">평온</span>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border-2 border-line bg-panel flex flex-col lg:flex-1 lg:min-h-0">
+        <div class="flex items-center justify-between px-3 py-2 border-b-2 border-line shrink-0">
+          <div class="flex items-center gap-2 text-sm text-slate-200">📜 <span>실시간 사건 로그</span></div>
+          <span id="logCount" class="text-[11px] text-slate-500">0건</span>
+        </div>
+        <div id="log" class="h-[150px] lg:h-auto lg:flex-1 lg:min-h-0 overflow-y-auto p-2.5 space-y-1.5 text-[13px] leading-snug"></div>
+      </div>
+    </section>
+
+    <!-- ---------- MIDDLE : 과학기술 + 연구 프로젝트 ---------- -->
+    <section class="lg:col-span-5 xl:col-span-4 flex flex-col gap-1.5 xl:gap-2 lg:min-h-0 lg:overflow-y-auto no-scrollbar">
+      <div class="rounded-2xl border-2 border-line bg-panel p-2">
+        <div class="flex items-center justify-between mb-1.5 px-0.5">
+          <div class="flex items-center gap-2"><span class="text-xl">🧪</span><span class="text-sm xl:text-base text-white">과학기술 연구소</span></div>
+          <span id="techCount" class="text-[11px] px-2 py-1 rounded-lg bg-panel2 border border-line text-slate-300">0 / 5 해금</span>
+        </div>
+        <div id="techGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5"></div>
+      </div>
+    </section>
+
+    <!-- ---------- RIGHT : 행동 · 턴 종료 ---------- -->
+    <section class="lg:col-span-3 flex flex-col gap-1.5 xl:gap-2 lg:min-h-0 lg:overflow-y-auto no-scrollbar">
+
+      <!-- 행동력 패널 -->
+      <div class="rounded-2xl border-2 border-line bg-panel p-2">
+        <div class="flex items-center justify-between mb-1.5 px-0.5">
+          <div class="flex items-center gap-2"><span class="text-xl">⚡</span><span class="text-sm xl:text-base text-white">이번 턴 행동</span></div>
+          <div class="flex items-center gap-1">
+            <span id="apDots" class="flex gap-1"></span>
+            <span class="text-[11px] text-slate-400 ml-1">행동력</span>
+          </div>
+        </div>
+        <div id="actionGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-1.5"></div>
+      </div>
+
+      <div class="rounded-2xl border-2 border-line bg-panel p-2.5 space-y-2">
+        <button id="nextTurnBtn" class="glowbtn w-full rounded-2xl border-b-4 border-amber-700 bg-gradient-to-b from-amber-400 to-amber-500 text-slate-900 py-3 text-lg active:scale-[.98] active:border-b-2 transition">
+          ⏭️ 턴 종료 (Next Turn)
+        </button>
+        <p id="hintLine" class="text-[11px] text-center text-slate-400 leading-snug">기술을 연구하고 턴을 종료해 문명을 발전시키세요!</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ================= MODAL: 퀴즈 ================= -->
+<div id="quizModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+  <div class="w-full max-w-lg rounded-2xl border-2 border-line bg-panel2 p-5" style="animation:popIn .25s ease-out">
+    <div class="flex items-center gap-3 mb-1">
+      <span id="quizIcon" class="text-4xl">📜</span>
+      <div>
+        <div class="text-[11px] text-amber-300">해금 확인 · 과학 원리 퀴즈</div>
+        <div id="quizTech" class="text-xl text-white"></div>
+      </div>
+    </div>
+    <p id="quizQ" class="mt-3 mb-3 text-base leading-relaxed text-slate-100 bg-panel rounded-xl border border-line p-3"></p>
+    <div id="quizOpts" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+    <div id="quizMsg" class="mt-3 text-sm min-h-[24px] text-center"></div>
+    <button id="quizClose" class="mt-2 w-full rounded-xl border-2 border-line bg-panel py-2.5 text-sm hover:bg-slate-700/40 active:scale-95 transition">닫기</button>
+  </div>
+</div>
+
+<!-- ================= MODAL: 이벤트 / 선택지 ================= -->
+<div id="eventModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+  <div class="w-full max-w-lg rounded-2xl border-2 border-line bg-panel2 p-5 text-center" style="animation:popIn .25s ease-out">
+    <div id="evIcon" class="text-6xl mb-1">⚠️</div>
+    <div id="evTitle" class="text-2xl text-white mb-1"></div>
+    <p id="evBody" class="text-sm text-slate-300 leading-relaxed mb-4"></p>
+    <div id="evBtns" class="space-y-2"></div>
+  </div>
+</div>
+
+<!-- ================= MODAL: 카드 뽑기 ================= -->
+<div id="drawModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+  <div class="w-full max-w-lg rounded-2xl border-2 border-line bg-panel2 p-4 text-center" style="animation:popIn .25s ease-out">
+    <div class="text-[11px] text-amber-300">🃏 시대의 사건</div>
+    <div id="drawTitle" class="text-xl text-white mb-1">카드를 한 장 골라 뒤집으세요</div>
+    <p id="drawHint" class="text-[12px] text-slate-400 mb-3">어떤 일이 기다리고 있을지는 아무도 모릅니다.</p>
+    <div id="drawCards" class="grid grid-cols-3 gap-2 sm:gap-3"></div>
+    <div id="drawResult" class="hidden mt-3 rounded-xl border-2 p-3"></div>
+    <button id="drawOk" class="hidden mt-3 w-full rounded-xl border-b-4 border-sky-700 bg-sky-500 text-white py-3 text-base active:scale-[.98] transition">계속한다</button>
+  </div>
+</div>
+
+<!-- ================= MODAL: 초기화 확인 ================= -->
+<div id="confirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+  <div class="w-full max-w-sm rounded-2xl border-2 border-rose-600 bg-panel2 p-5 text-center" style="animation:popIn .2s ease-out">
+    <div class="text-5xl mb-2">🔄</div>
+    <div class="text-xl text-white mb-1">정말 초기화하시겠습니까?</div>
+    <p id="confirmSub" class="text-[13px] text-slate-300 leading-snug mb-4">지금까지의 진행 상황이 모두 사라지고<br>1턴부터 새로 시작합니다.</p>
+    <div class="space-y-2">
+      <button id="confirmYes" class="w-full rounded-xl border-b-4 border-rose-700 bg-rose-500 text-white py-3 text-base active:scale-[.98] transition">네, 처음부터 시작합니다</button>
+      <button id="confirmNo" class="w-full rounded-xl border-2 border-line bg-panel py-3 text-base text-slate-200 hover:bg-slate-700/40 active:scale-95 transition">아니요, 계속할래요</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: 시작 화면 ================= -->
+<!-- ================= 타이틀 화면 ================= -->
+<div id="introModal" class="fixed inset-0 z-50 flex items-center justify-center bg-ink p-3">
+  <div class="relative w-full max-w-3xl max-h-[95vh] rounded-2xl border-2 border-amber-700/60 overflow-hidden shadow-2xl">
+
+    <!-- 배경 그림 (images/title-bg.jpg 를 넣으면 자동 적용) -->
+    <!-- 그림 위쪽(그림에 새겨진 제목 부분)은 잘라내고 아래 풍경만 보이도록 배치 -->
+    <div id="titleBg" class="absolute inset-0 bg-cover bg-center"
+         style="background-image:radial-gradient(120% 90% at 50% 0%,#3b4b7a 0%,#1b2340 45%,#0b1220 100%)"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/75"></div>
+
+    <div class="relative overflow-y-auto max-h-[95vh]">
+
+      <!-- ── 화면 1 : 타이틀 ───────────────────────── -->
+      <div id="introHome" class="px-6 py-8 text-center">
+        <div class="text-[11px] tracking-[0.4em] text-amber-200/80 mb-1">SCIENCE CIVILIZATION</div>
+        <h1 class="font-title title-glow text-6xl sm:text-7xl leading-none">문명</h1>
+        <div class="font-title text-lg sm:text-xl text-amber-200 mt-1 tracking-wide">과학기술 에디션</div>
+        <p class="text-[13px] text-slate-200/90 mt-3 leading-relaxed drop-shadow">
+          작은 정착지에서 시작해 12턴 안에 인류의 5대 과학기술을 손에 넣으세요.<br>
+          기근과 전염병, 그리고 전쟁이 당신의 문명을 시험합니다.
+        </p>
+
+        <div class="mt-6 space-y-2.5 max-w-xs mx-auto">
+          <button id="startBtn" class="menu-btn w-full rounded-xl border-b-4 border-amber-700 bg-gradient-to-b from-amber-300 to-amber-500 text-slate-900 py-3.5 text-xl">▶  게임 시작</button>
+          <button id="howBtn"   class="menu-btn w-full rounded-xl border-b-4 border-sky-800 bg-gradient-to-b from-sky-500 to-sky-700 text-white py-3 text-lg">📖  게임 설명</button>
+          <button id="sciBtn"   class="menu-btn w-full rounded-xl border-b-4 border-emerald-800 bg-gradient-to-b from-emerald-500 to-emerald-700 text-white py-3 text-lg">🔬  개념 설명</button>
+        </div>
+        <div class="text-[11px] text-slate-400 mt-5">중학교 3학년 과학 · 「과학기술과 인류 문명」</div>
+      </div>
+
+      <!-- ── 화면 2 : 게임 설명 ───────────────────── -->
+      <div id="introHow" class="hidden px-5 py-6">
+        <div class="flex items-center gap-2 mb-3">
+          <button class="backBtn rounded-lg border border-line bg-black/40 px-3 py-1.5 text-[13px] text-slate-200 hover:bg-black/60">← 뒤로</button>
+          <h2 class="font-title text-2xl text-amber-200">게임 설명</h2>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-2 text-[13px]">
+          <div class="rounded-xl bg-black/45 border border-line p-3">
+            <div class="text-amber-300 mb-1">🎯 목표</div>
+            <ul class="space-y-1 text-slate-200 leading-snug">
+              <li>· 12턴 동안 인구를 지키며 생존하기</li>
+              <li>· 5대 핵심 과학기술 모두 해금하기</li>
+              <li>· 점수를 높여 <b>S등급</b> 달성하기</li>
+              <li>· 인구 0명 또는 오염도 100% = <b class="text-rose-300">실패</b></li>
+            </ul>
+          </div>
+          <div class="rounded-xl bg-black/45 border border-line p-3">
+            <div class="text-amber-300 mb-1">📊 매 턴 계산</div>
+            <ul class="space-y-1 text-slate-200 leading-snug">
+              <li>· 🍎 식량 = 기본 + 시설 − 인구수</li>
+              <li>· 💡 지식 = 인구수 (인쇄술 후 ×2)</li>
+              <li>· 식량 20 이상 남으면 인구 +3명</li>
+              <li>· 식량 부족분만큼 인구 아사</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-black/45 border border-line p-3 text-[13px] mt-2">
+          <div class="text-sky-300 mb-1">⚡ 턴마다 행동력 2개 — 무엇에 쓸까요?</div>
+          <div class="text-slate-200 leading-snug">
+            🏗️ 시설 건설 · 🔬 기술 연구 · 🌱 환경 정화 · 🧭 탐험 보내기<br>
+            <span class="text-slate-400">각 행동은 한 턴에 한 번씩. 남기면 개당 💡+2로 바뀝니다.</span>
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-black/45 border border-line p-3 text-[13px] mt-2">
+          <div class="text-emerald-300 mb-1">🏗️ 땅을 골라 지으세요 — 지형마다 산출이 다릅니다</div>
+          <div class="text-slate-200 leading-snug">
+            초원 🍎3(농장) · 평원 🍎1 💡1(마을) · 언덕 💡2(광산) · 숲 🍎1 💡1(벌목장)<br>
+            <span class="text-sky-300">💧 강에 접한 땅은 식량 +2</span>
+            <span class="text-slate-400">— 인류 문명이 큰 강 유역에서 시작한 이유입니다.</span><br>
+            <span class="text-slate-400">사막과 산은 처음엔 쓸모가 없지만 <b>질소 비료</b>(사막→관개지)와 <b>정보통신 기술</b>(산→통신소)을 개발하면 쓸 수 있게 됩니다.</span>
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-black/45 border border-line p-3 text-[13px] mt-2">
+          <div class="text-amber-300 mb-1">⚖️ 기술에는 두 얼굴이 있습니다</div>
+          <div class="text-slate-200 leading-snug">
+            기술을 개발할 때마다 <b>어떻게 쓸지 선택</b>합니다. 비료를 더 뿌릴지, 가축에도 항생제를 쓸지…
+            <span class="text-slate-400">더 큰 이익에는 대가가 따릅니다.</span>
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-black/45 border border-line p-3 text-[13px] mt-2">
+          <div class="text-sky-300 mb-1">🃏 시대의 사건 — 매 턴 카드 한 장</div>
+          <div class="text-slate-200 leading-snug">
+            뒷면으로 놓인 세 장 중 하나를 골라 뒤집습니다.
+            <span class="text-slate-400">좋은 일이 대부분이지만 <span class="text-rose-300">화재·병충해·폭풍</span>도 섞여 있습니다.</span>
+          </div>
+        </div>
+
+        <div class="rounded-xl bg-black/45 border border-line p-3 text-[13px] mt-2 mb-3">
+          <div class="text-rose-300 mb-1">⚠️ 위기와 전쟁은 매 판 순서가 바뀝니다</div>
+          <div class="text-slate-200 leading-snug">
+            식량 대기근 · 전염병 창궐 · 물류 마비 · 스모그 위기 · <b class="text-rose-300">전쟁 1회</b> — 총 5번.<br>
+            <span class="text-sky-300">🔭 다가오는 위기는 화면 위쪽에 미리 예고됩니다.</span>
+            <span class="text-slate-400">처음엔 "무언가 다가온다"만 보이지만, <b>활판 인쇄술</b>을 개발하면 위기의 이름이, <b>정보통신 기술</b>까지 개발하면 대비책과 준비 상태까지 보입니다.</span><br>
+            <span class="text-slate-400">⚔️ 전쟁은 <b>국력 = 인구 + (기술 수 × 15)</b>의 비율만큼 승리 확률이 정해집니다. 확률을 보고 싸울지 조공할지 고르세요.</span>
+          </div>
+        </div>
+
+        <button class="backBtn menu-btn w-full rounded-xl border-b-4 border-amber-700 bg-gradient-to-b from-amber-300 to-amber-500 text-slate-900 py-3 text-lg">← 타이틀로</button>
+      </div>
+
+      <!-- ── 화면 3 : 개념 설명 ───────────────────── -->
+      <div id="introSci" class="hidden px-5 py-6">
+        <div class="flex items-center gap-2 mb-1">
+          <button class="backBtn rounded-lg border border-line bg-black/40 px-3 py-1.5 text-[13px] text-slate-200 hover:bg-black/60">← 뒤로</button>
+          <h2 class="font-title text-2xl text-emerald-200">개념 설명</h2>
+        </div>
+        <p class="text-[12px] text-slate-300 mb-3">인류 문명을 바꾼 5가지 과학기술입니다. 게임에서 만나기 전에 미리 살펴보세요.</p>
+        <div id="sciCards" class="space-y-2 mb-3"></div>
+        <button class="backBtn menu-btn w-full rounded-xl border-b-4 border-amber-700 bg-gradient-to-b from-amber-300 to-amber-500 text-slate-900 py-3 text-lg">← 타이틀로</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL: 게임 종료 리포트 ================= -->
+<div id="endModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-ink/95 backdrop-blur p-3">
+  <div class="w-full max-w-3xl rounded-2xl border-2 border-line bg-panel2 p-4 sm:p-5 max-h-[94vh] overflow-y-auto" style="animation:popIn .3s ease-out">
+    <div class="text-center">
+      <div id="endIcon" class="text-6xl">🏆</div>
+      <h2 id="endTitle" class="text-3xl text-white mt-1"></h2>
+      <p id="endSub" class="text-sm text-slate-400"></p>
+      <div class="mt-3 inline-flex items-end gap-4 rounded-2xl border-2 border-line bg-panel px-6 py-3">
+        <div class="text-left">
+          <div class="text-[11px] text-slate-400 leading-none">달성 등급</div>
+          <div id="endGrade" class="text-6xl leading-none text-amber-300">S</div>
+        </div>
+        <div class="text-left border-l border-line pl-4">
+          <div class="text-[11px] text-slate-400 leading-none">문명 점수</div>
+          <div class="leading-none"><span id="endScore" class="text-5xl text-white">0</span><span class="text-sm text-slate-400">점</span></div>
+        </div>
+        <div id="endGradeDesc" class="text-left text-[13px] text-slate-300 pb-1 max-w-[220px] leading-snug"></div>
+      </div>
+    </div>
+
+    <!-- 점수 계산 내역 -->
+    <div class="mt-3 rounded-xl bg-panel border border-line p-3">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-amber-300 text-sm">📊 점수 계산</span>
+        <span class="text-[11px] text-slate-400">S 1250 · A 1000 · B 750 · C 500</span>
+      </div>
+      <div id="endScoreRows" class="space-y-1 text-[13px]"></div>
+    </div>
+
+    <div class="mt-3 grid sm:grid-cols-2 gap-3">
+      <div class="rounded-xl bg-panel border border-line p-3">
+        <div class="text-amber-300 text-sm mb-2">📈 최종 문명 지표</div>
+        <div id="endStats" class="grid grid-cols-2 gap-2 text-[13px]"></div>
+      </div>
+      <div class="rounded-xl bg-panel border border-line p-3">
+        <div class="text-amber-300 text-sm mb-2">🧪 기술 해금 현황</div>
+        <div id="endTechs" class="space-y-1 text-[13px]"></div>
+      </div>
+    </div>
+
+    <div class="mt-3 rounded-xl bg-panel border border-line p-3">
+      <div class="text-amber-300 text-sm mb-2">📜 나의 문명 역사 리포트</div>
+      <div id="endHistory" class="max-h-[168px] overflow-y-auto space-y-1 text-[13px] text-slate-300 pr-1"></div>
+    </div>
+
+    <div class="mt-3 rounded-xl border-2 border-amber-600/60 bg-amber-500/10 p-3">
+      <div class="text-amber-300 text-sm mb-1">🙋 수업 정리 질문</div>
+      <p class="text-[15px] text-white mb-2">어떤 기술이 인류 생존에 가장 결정적이었나요? 그 이유는 무엇일까요?</p>
+      <p id="warNote" class="hidden text-[13px] text-amber-100/90 bg-black/25 rounded-lg px-2.5 py-2 mb-2 leading-snug"></p>
+      <div id="reflectOpts" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+      <p id="reflectMsg" class="mt-2 text-[13px] text-amber-200 min-h-[20px] leading-snug"></p>
+    </div>
+
+    <button id="restartBtn" class="mt-4 w-full rounded-2xl border-b-4 border-sky-800 bg-gradient-to-b from-sky-400 to-sky-500 text-slate-900 py-4 text-xl active:scale-[.98] transition">🔄 다시 하기</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   사이언스 문명 빌더 — 게임 로직 (Vanilla JS)
+   ========================================================= */
+
+const MAX_TURN = 12;
+
+/* ---------- 밸런스 상수 (교사용 난이도 조절 포인트) ----------
+   POLL_PER_TURN : 증기기관 가동 시 매 턴 오염 증가량 (교과서 기본값 5)
+                   → 8~10으로 올리면 '환경 시위·11턴 스모그 위기·오염 100% 패배'가
+                     실제로 발동하는 하드 모드가 됩니다.
+   FOOD_BASE / FOOD_FERT : 턴당 식량 생산량 (기본 20 → 질소 비료 60)          */
+const BAL = { POLL_PER_TURN: 5, FOOD_BASE: 20, FOOD_FERT: 60 };
+
+/* =========================================================
+   🖼️ 그림 자동 교체 — images 폴더에 "정해진 이름"으로 넣기만 하면 됩니다
+   ---------------------------------------------------------
+   · 아래 이름 그대로 images 폴더에 저장하면 코드를 고치지 않아도
+     게임을 열 때 자동으로 그 그림이 사용됩니다.
+   · 파일이 없거나 인터넷이 끊겨도 자동으로 내장 SVG 그림으로 표시됩니다.
+     (넣은 것만 바뀌고, 안 넣은 것은 원래 그림 그대로)
+   · 외부 주소를 쓰고 싶다면 경로 대신 'https://...png' 를 넣으면 됩니다.
+   · 권장: 건물·아이콘은 배경 투명 PNG, 배경은 JPG, 각 200KB 이하
+   ========================================================= */
+const IMG = {
+  titleBg: 'images/title-bg.jpg',              // 🖼️ 시작(타이틀) 화면 배경 그림
+  mapBg: 'images/map-bg.jpg',                  // 맵 전체 배경
+  terrain: {                                   // 지형 타일 텍스처
+    g: 'images/terrain-grass.png',             // 초원
+    p: 'images/terrain-plains.png',            // 평원
+    d: 'images/terrain-desert.png',            // 사막
+    h: 'images/terrain-hills.png',             // 언덕
+    f: 'images/terrain-forest.png',            // 숲
+    m: 'images/terrain-mountain.png',          // 산
+    w: 'images/terrain-sea.png',               // 바다
+    c: 'images/terrain-coast.png'              // 연안
+  },
+  building: {                                  // 맵 위 건물 (배경 투명 PNG 권장)
+    center:   'images/building-city.png',      // 중심 도시
+    house:    'images/building-house.png',     // 집
+    library:  'images/building-library.png',   // 도서관 (활판 인쇄술)
+    hospital: 'images/building-hospital.png',  // 병원 (페니실린)
+    factory:  'images/building-factory.png',   // 공장 (증기기관)
+    rail:     'images/building-train.png',     // 기차 (증기기관)
+    antenna:  'images/building-antenna.png'    // 통신탑 (정보통신)
+  },
+  tech: {                                      // 5대 기술 카드 아이콘 (정사각형)
+    print: 'images/tech-print.png',
+    fert:  'images/tech-fert.png',
+    steam: 'images/tech-steam.png',
+    peni:  'images/tech-peni.png',
+    ict:   'images/tech-ict.png'
+  }
+};
+
+/* 로드에 성공한 그림만 사용 (실패하면 내장 SVG로 폴백)
+   확장자는 자동으로 찾아줍니다 — title-bg.jpg 로 적어두고 title-bg.png 를 넣어도 됩니다. */
+const IMG_EXT = ['png', 'jpg', 'jpeg', 'webp', 'PNG', 'JPG'];
+const IMGOK = {};                       // 설정한 경로 → 실제로 성공한 주소
+const pic = u => (u && IMGOK[u]) || '';
+
+function preloadImages(done) {
+  const urls = [];
+  const dig = o => Object.values(o).forEach(v => typeof v === 'string' ? (v && urls.push(v)) : dig(v));
+  dig(IMG);
+  if (!urls.length) { done(); return; }
+
+  const tryLoad = (url, cb) => {
+    const im = new Image();
+    im.onload = () => cb(url);
+    im.onerror = () => cb(null);
+    im.src = url;
+  };
+  // 설정된 경로를 먼저 시도하고, 안 되면 같은 이름의 다른 확장자를 차례로 시도
+  const resolve = (path, cb) => {
+    if (/^https?:/i.test(path)) { tryLoad(path, cb); return; }
+    const base = path.replace(/\.[a-z]+$/i, '');
+    const list = [path].concat(IMG_EXT.map(e => base + '.' + e))
+      .filter((v, i, a) => a.indexOf(v) === i);
+    let i = 0;
+    const next = () => {
+      if (i >= list.length) { cb(null); return; }
+      tryLoad(list[i++], u => u ? cb(u) : next());
+    };
+    next();
+  };
+
+  let left = urls.length, ok = 0; const missing = [];
+  const tick = () => {
+    if (--left > 0) return;
+    console.log('%c[그림] ' + ok + '/' + urls.length + '개 적용됨', 'color:#7dd3fc');
+    if (missing.length) console.warn('[그림] 없어서 내장 그림으로 대체: ' + missing.join(', '));
+    done();
+  };
+  urls.forEach(u => resolve(u, found => {
+    if (found) { IMGOK[u] = found; ok++; } else missing.push(u);
+    tick();
+  }));
+}
+
+/* ---------- 5대 핵심 과학기술 ---------- */
+const TECHS = [
+  {
+    id: 'print', name: '활판 인쇄술', sub: '지식 혁명', icon: '📜', sp: 'sp-t-print',
+    cost: { k: 40, f: 0 },
+    effect: '학자 1명당 💡2 → 💡3 · 날씨 예보 · 위기 정체 파악',
+    side: null,
+    q: '금속 활자로 책을 대량 인쇄하여 지식을 널리 보급한 기술은?',
+    opts: ['활판 인쇄술', '나침반', '화약', '종이 제조법'], ans: 0,
+    why: '구텐베르크의 금속 활자 인쇄술은 책값을 크게 낮춰 지식의 대중화와 과학 혁명의 토대를 만들었습니다.'
+  },
+  {
+    id: 'fert', name: '질소 비료', sub: '농업 혁명', icon: '🌾', sp: 'sp-t-fert',
+    cost: { k: 40, f: 100 },
+    effect: '턴당 식량 생산량 +20 ➔ +60 폭증',
+    side: null,
+    q: '공기 중 질소로 암모니아를 합성해 만든 식량 대량 증산의 주역은?',
+    opts: ['농약', '질소 비료', '비닐하우스', '트랙터'], ans: 1,
+    why: '하버-보슈법으로 만든 질소 비료는 단위 면적당 수확량을 폭증시켜 인류를 기아에서 구했습니다.'
+  },
+  {
+    id: 'steam', name: '증기기관', sub: '교통·산업 혁명', icon: '🚂', sp: 'sp-t-steam',
+    cost: { k: 80, f: 80 },
+    effect: '식량 저장 한도 100 ➔ 250, 턴당 지식 +10',
+    side: '매 턴 환경 오염도 +5% 누적',
+    q: '증기의 압력으로 기계를 움직여 대량 수송을 가능하게 한 동력원은?',
+    opts: ['수차', '내연기관', '증기기관', '전기 모터'], ans: 2,
+    why: '증기기관은 산업 혁명의 심장이었지만, 화석 연료 사용으로 환경 오염이라는 숙제도 함께 남겼습니다.'
+  },
+  {
+    id: 'peni', name: '페니실린', sub: '의료 혁명', icon: '💊', sp: 'sp-t-peni',
+    cost: { k: 130, f: 0 }, gate: 'poll40',
+    effect: '전염병 위기 완전 면역, 자연 사망률 0%',
+    side: null,
+    q: '푸른곰팡이에서 발견되어 세균성 질환을 치료하고 수명을 늘린 의약품은?',
+    opts: ['백신', '아스피린', '인슐린', '페니실린'], ans: 3,
+    why: '플레밍이 발견한 페니실린은 최초의 항생제로, 인류의 평균 수명을 획기적으로 늘렸습니다.'
+  },
+  {
+    id: 'ict', name: '정보통신 기술', sub: '초연결 사회', icon: '📡', sp: 'sp-t-ict',
+    cost: { k: 170, f: 0 },
+    effect: '매 턴 지식 +50 · 다가오는 위기의 대비책까지 파악',
+    side: null,
+    q: '전 세계를 인터넷으로 연결해 정보를 실시간으로 공유하게 만든 기술은?',
+    opts: ['전신', '정보통신 기술', '라디오', '증기선'], ans: 1,
+    why: '정보통신 기술은 지식의 생산과 공유 속도를 폭발적으로 높여 초연결 지능 정보 사회를 열었습니다.'
+  }
+];
+const TECH = {}; TECHS.forEach(t => TECH[t.id] = t);
+
+/* =========================================================
+   🔬 개념 설명 — 5대 과학기술의 역사 (타이틀 화면에서 열람)
+   ========================================================= */
+const SCI_NOTES = [
+  { id: 'print', when: '1450년경', who: '요하네스 구텐베르크',
+    what: '금속 활자를 하나씩 조합해 같은 책을 빠르게 찍어내는 기술.',
+    why: '책값이 크게 떨어져 지식이 소수의 것에서 <b>모두의 것</b>이 되었습니다. 과학자들이 서로의 연구를 읽고 이어 갈 수 있게 되면서 과학 혁명의 토대가 됐습니다.',
+    two: '같은 인쇄기가 잘못된 소문과 선전물을 퍼뜨리는 데도 쓰였습니다.' },
+  { id: 'fert', when: '1909년', who: '프리츠 하버 · 카를 보슈',
+    what: '공기의 78%를 차지하는 질소를 암모니아로 바꿔 비료를 대량 생산(하버-보슈법).',
+    why: '단위 면적당 수확량이 폭증해 <b>수십억 명을 먹여 살렸습니다.</b> 오늘날 인류가 먹는 단백질의 상당 부분이 이 기술 덕분입니다.',
+    two: '같은 기술로 만든 질산염은 폭약이 되었고, 하버는 제1차 세계대전 때 독가스를 개발했습니다. 비료를 너무 많이 쓰면 강이 녹조로 뒤덮이기도 합니다.' },
+  { id: 'steam', when: '1769년', who: '제임스 와트 (개량)',
+    what: '물을 끓인 수증기의 힘으로 기계를 움직이는 동력 기관.',
+    why: '사람과 가축의 힘에 의존하던 생산이 <b>기계의 힘</b>으로 바뀌었습니다. 공장·기차·증기선이 등장하며 산업 혁명이 시작됐습니다.',
+    two: '석탄을 태우며 도시는 매연으로 뒤덮였고, 오늘날 기후 변화 문제의 출발점이 되었습니다.' },
+  { id: 'peni', when: '1928년', who: '알렉산더 플레밍',
+    what: '푸른곰팡이에서 우연히 발견한 <b>최초의 항생제</b>.',
+    why: '작은 상처로도 목숨을 잃던 시대가 끝났습니다. 세균성 질환을 치료할 수 있게 되면서 <b>인류의 평균 수명이 크게 늘었습니다.</b>',
+    two: '항생제를 남용하면 살아남은 세균이 내성을 얻습니다. 약이 듣지 않는 <b>내성균</b>은 오늘날 가장 큰 보건 문제 중 하나입니다.' },
+  { id: 'ict', when: '1969년 → 1989년', who: 'ARPANET → 팀 버너스리(WWW)',
+    what: '전 세계 컴퓨터를 연결해 정보를 주고받는 기술.',
+    why: '지식의 생산과 공유 속도가 폭발적으로 빨라졌습니다. 지구 반대편의 연구를 <b>몇 초 만에</b> 확인할 수 있는 초연결 사회가 되었습니다.',
+    two: '개인정보 수집과 감시, 가짜 정보의 확산, 정보 격차라는 새로운 문제도 함께 생겼습니다.' }
+];
+
+function renderSciCards() {
+  $('sciCards').innerHTML = SCI_NOTES.map(s => {
+    const t = TECH[s.id];
+    return '<div class="rounded-xl bg-black/50 border border-line p-3 text-left">' +
+      '<div class="flex items-center gap-2 mb-1">' +
+        '<span class="shrink-0 rounded-lg bg-black/40 p-1">' +
+          (pic(IMG.tech[s.id]) ? '<img src="' + pic(IMG.tech[s.id]) + '" width="30" height="30" class="rounded object-contain" alt="">' : svgIcon(t.sp, 30)) +
+        '</span>' +
+        '<div><div class="font-title text-lg text-white leading-tight">' + t.name + '</div>' +
+        '<div class="text-[11px] text-amber-300">' + s.when + ' · ' + s.who + '</div></div>' +
+      '</div>' +
+      '<div class="text-[12.5px] text-slate-200 leading-snug">' + s.what + '</div>' +
+      '<div class="text-[12.5px] text-emerald-200 leading-snug mt-1">✨ ' + s.why + '</div>' +
+      '<div class="text-[12.5px] text-rose-200 leading-snug mt-1">⚖️ ' + s.two + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+/* ---------- 문명 발전 단계 ---------- */
+const ERAS = [
+  { n: 0, name: '원시 정착지', center: 'sp-c0', house: 'sp-tent' },
+  { n: 1, name: '농경 마을',   center: 'sp-c1', house: 'sp-hut' },
+  { n: 2, name: '도시 국가',   center: 'sp-c2', house: 'sp-hut' },
+  { n: 3, name: '산업 도시',   center: 'sp-c3', house: 'sp-house' },
+  { n: 4, name: '근대 도시',   center: 'sp-c4', house: 'sp-house' },
+  { n: 5, name: '스마트 문명', center: 'sp-c5', house: 'sp-apartment' }
+];
+
+/* 인라인 SVG 스프라이트 헬퍼 (외부 파일 없음 · 심볼의 viewBox가 비율을 맡음) */
+function svgIcon(id, w, h, cls) {
+  return '<svg class="' + (cls || '') + '" width="' + w + '" height="' + (h || w) + '" aria-hidden="true" focusable="false"><use href="#' + id + '"/></svg>';
+}
+const bldIcon = (id, w, cls) => svgIcon(id, w, Math.round(w * 56 / 48), cls);   // 건물 48×56
+const citIcon = (id, w, cls) => svgIcon(id, w, Math.round(w * 40 / 32), cls);   // 시민 32×40
+
+/* =========================================================
+   육각(HEX) 타일 맵 — 문명(Civ) 스타일 SVG 렌더러
+   지형 8종 · 고저차 · 강 · 영토 경계 · 도시 배너
+   ========================================================= */
+const HEXR = 46;                                  // 육각형 가로 반지름
+const HEXK = 0.62;                                // 세로 눌림(원근감)
+const HEXH = HEXR * Math.sqrt(3) / 2 * HEXK;      // 세로 절반
+const HEXDEPTH = 9;                               // 타일 두께(입체감)
+const MAPW = 11, MAPH = 5;
+const ORIGIN = { x: 62, y: 96 };
+
+/* w:바다 c:연안 g:초원 p:평원 d:사막 h:언덕 f:숲 m:산 */
+const HEX = [
+  'wcgffmmgpcw',
+  'cgggfhmggpc',
+  'cgpgggghggc',
+  'cddgggpghgc',
+  'wcddgggcgcw'
+];
+const RIVER = [[8, 0], [8, 1], [9, 2], [9, 3], [9, 4]];
+
+const TER = {
+  w: { top: '#215a8d', side: '#16406a' },
+  c: { top: '#2f83b4', side: '#20618a' },
+  g: { top: '#5f9243', side: '#456b31' },
+  p: { top: '#8d9a4a', side: '#6a7337' },
+  d: { top: '#d6bd85', side: '#a89060' },
+  h: { top: '#6f8a49', side: '#4d6134' },
+  f: { top: '#4a7b3c', side: '#34592b' },
+  m: { top: '#8b8271', side: '#615a4d' }
+};
+
+const SLOT = {
+  center: [5, 2],
+  houses: [[4, 2], [6, 2], [5, 3], [4, 3], [6, 3], [3, 2], [5, 1], [7, 2]],
+  library: [3, 1], hospital: [8, 2], factory: [7, 3], rail: [7, 1], antenna: [6, 1],
+  farms: [[4, 4], [5, 4], [6, 4]],
+  protest: [8, 3], chain: [3, 3],
+  colony: [[2, 3], [8, 4], [2, 1]]
+};
+
+const terrainAt = (c, r) => (HEX[r] && HEX[r][c]) || 'w';
+const inMap = (c, r) => c >= 0 && c < MAPW && r >= 0 && r < MAPH;
+const isLand = (c, r) => inMap(c, r) && !'wc'.includes(terrainAt(c, r));
+const isWalk = (c, r) => isLand(c, r) && terrainAt(c, r) !== 'm';
+const liftOf = (c, r) => { const t = terrainAt(c, r); return t === 'h' ? 7 : t === 'm' ? 12 : 0; };
+
+/* 육각형(flat-top · 홀수 열은 아래로) — 타일 사이에 살짝 틈을 둬 두께가 보이게 */
+const GAPX = 2, GAPY = 6;
+const hexPos = (c, r) => ({
+  x: ORIGIN.x + (1.5 * HEXR + GAPX) * c,
+  y: ORIGIN.y + (2 * HEXH + GAPY) * r + ((c & 1) ? HEXH + GAPY / 2 : 0)
+});
+function hexPoints(x, y) {
+  const p = [];
+  for (let i = 0; i < 6; i++) {
+    const a = Math.PI / 3 * i;
+    p.push([x + HEXR * Math.cos(a), y + HEXR * Math.sin(a) * HEXK]);
+  }
+  return p;
+}
+function neighbors(c, r) {
+  const o = c & 1;
+  return [[c + 1, r + (o ? 1 : 0)], [c, r + 1], [c - 1, r + (o ? 1 : 0)],
+          [c - 1, r + (o ? 0 : -1)], [c, r - 1], [c + 1, r + (o ? 0 : -1)]];
+}
+const toCube = (c, r) => { const x = c, z = r - ((c - (c & 1)) / 2); return [x, -x - z, z]; };
+function hexDist(a, b) {
+  const A = toCube(a[0], a[1]), B = toCube(b[0], b[1]);
+  return Math.max(Math.abs(A[0] - B[0]), Math.abs(A[1] - B[1]), Math.abs(A[2] - B[2]));
+}
+const territoryRadius = () => techCount() >= 4 ? 4 : techCount() >= 2 ? 3 : 2;
+const isOwned = (c, r) => isLand(c, r) && hexDist([c, r], SLOT.center) <= territoryRadius();
+
+let citizens = [];
+
+/* ---------- 스프라이트 배치 ---------- */
+function useSp(id, x, y, w, cls, ratio) {
+  const h = Math.round(w * (ratio || 56 / 48));
+  // 'sp-'로 시작하면 내장 SVG 심볼, 그 외에는 이미지 주소
+  // (http://, https://, images/house.png 같은 상대경로, data: 모두 지원)
+  if (id.slice(0, 3) !== 'sp-')
+    return '<image href="' + id + '" x="' + (x - w / 2).toFixed(1) + '" y="' + (y - h).toFixed(1) +
+      '" width="' + w + '" height="' + h + '" preserveAspectRatio="xMidYMax meet"' + (cls ? ' class="' + cls + '"' : '') + '/>';
+  return '<use href="#' + id + '" x="' + (x - w / 2).toFixed(1) + '" y="' + (y - h).toFixed(1) +
+    '" width="' + w + '" height="' + h + '"' + (cls ? ' class="' + cls + '"' : '') + '/>';
+}
+function putHex(slot, id, w, cls) {
+  const p = hexPos(slot[0], slot[1]);
+  return useSp(id, p.x, p.y - liftOf(slot[0], slot[1]) + 7, w, cls);
+}
+
+/* ---------- 지형 레이어 (1회 생성) ---------- */
+/* ---------- 내장 지형 텍스처 (이미지 파일 없이 SVG로 그리는 질감) ----------
+   얼룩 + 풀결을 이어붙여도 티 안 나도록 상하좌우로 9번 겹쳐 그립니다.      */
+const TEXDEF = {
+  g: { base: '#5f9243', light: '#7cb055', dark: '#4a7833', blade: '#8bbe62', n: 26, len: 4 },   // 초원
+  p: { base: '#8d9a4a', light: '#a6b160', dark: '#727f38', blade: '#b6c06d', n: 20, len: 3 },   // 평원
+  h: { base: '#6f8a49', light: '#86a05c', dark: '#586f37', blade: '#97b06a', n: 22, len: 3 },   // 언덕
+  f: { base: '#4a7b3c', light: '#5b9149', dark: '#37602d', blade: '#6ba455', n: 30, len: 5 },   // 숲
+  d: { base: '#d6bd85', light: '#e8d5a6', dark: '#bb9f68', blade: '#c9ad76', n: 12, len: 6 }    // 사막
+};
+function texPattern(k) {
+  const T = TEXDEF[k], W = (2 * HEXR).toFixed(0), H = (2 * HEXH + 12).toFixed(0);
+  let seed = 20250818 + k.charCodeAt(0);
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  // 얼룩과 풀결을 한 번만 만들고, 9방향으로 반복 배치해 이음매를 없앰
+  let inner = '';
+  for (let i = 0; i < 7; i++) {
+    inner += '<ellipse cx="' + (rnd() * W).toFixed(1) + '" cy="' + (rnd() * H).toFixed(1) +
+      '" rx="' + (10 + rnd() * 18).toFixed(1) + '" ry="' + (5 + rnd() * 8).toFixed(1) +
+      '" fill="' + (i % 2 ? T.light : T.dark) + '" opacity="' + (0.28 + rnd() * 0.22).toFixed(2) + '"/>';
+  }
+  let blades = '';
+  for (let i = 0; i < T.n; i++) {
+    const x = (rnd() * W), y = (rnd() * H);
+    blades += k === 'd'
+      ? '<path d="M' + x.toFixed(1) + ' ' + y.toFixed(1) + ' q' + T.len + ' -2 ' + (T.len * 2) + ' 0"/>'
+      : '<path d="M' + x.toFixed(1) + ' ' + y.toFixed(1) + ' l' + (rnd() * 2 - 1).toFixed(1) + ' -' + T.len + '"/>';
+  }
+  inner += '<g stroke="' + T.blade + '" stroke-width="1.1" fill="none" stroke-linecap="round" opacity=".6">' + blades + '</g>';
+
+  let rep = '';
+  [-1, 0, 1].forEach(ix => [-1, 0, 1].forEach(iy => {
+    rep += '<g transform="translate(' + (ix * W) + ',' + (iy * H) + ')">' + inner + '</g>';
+  }));
+  return '<pattern id="tex-' + k + '" patternUnits="userSpaceOnUse" width="' + W + '" height="' + H + '">' +
+    '<rect width="' + W + '" height="' + H + '" fill="' + T.base + '"/>' + rep + '</pattern>';
+}
+
+function buildMap() {
+  let tiles = '', feats = '', defs = '';
+  Object.keys(TEXDEF).forEach(k => { defs += texPattern(k); });   // 내장 텍스처
+
+  // 외부 이미지: 맵 배경 + 지형 텍스처 패턴
+  if (pic(IMG.mapBg))
+    tiles += '<image href="' + pic(IMG.mapBg) + '" x="0" y="0" width="832" height="392" preserveAspectRatio="xMidYMid slice" opacity=".95"/>';
+  Object.keys(IMG.terrain).forEach(k => {
+    if (!pic(IMG.terrain[k])) return;
+    defs += '<pattern id="pat-' + k + '" patternUnits="userSpaceOnUse" width="' + (2 * HEXR).toFixed(0) +
+      '" height="' + (2 * HEXH + 12).toFixed(0) + '"><image href="' + pic(IMG.terrain[k]) + '" x="0" y="0" width="' +
+      (2 * HEXR).toFixed(0) + '" height="' + (2 * HEXH + 12).toFixed(0) + '" preserveAspectRatio="xMidYMid slice"/></pattern>';
+  });
+  $('hexDefs').innerHTML = defs;
+  for (let r = 0; r < MAPH; r++) {
+    for (let c = 0; c < MAPW; c++) {
+      const t = terrainAt(c, r), T = TER[t] || TER.g;
+      const lift = liftOf(c, r);
+      const p = hexPos(c, r);
+      const y = p.y - lift;
+      const v = hexPoints(p.x, y);
+      const f2 = n => n.toFixed(1);
+      const top = v.map(q => f2(q[0]) + ',' + f2(q[1])).join(' ');
+      const d = HEXDEPTH + lift;
+      const side = [v[0], v[1], v[2], v[3]].map(q => f2(q[0]) + ',' + f2(q[1])).join(' ') + ' ' +
+        [v[3], v[2], v[1], v[0]].map(q => f2(q[0]) + ',' + f2(q[1] + d)).join(' ');
+
+      // 우선순위: 사용자가 넣은 이미지 > 내장 SVG 텍스처 > 단색
+      const topFill = pic(IMG.terrain[t]) ? 'url(#pat-' + t + ')'
+        : (TEXDEF[t] ? 'url(#tex-' + t + ')' : T.top);
+      tiles += '<polygon points="' + side + '" fill="' + T.side + '"/>' +
+        '<polygon id="hx-' + c + '-' + r + '" data-top="' + topFill + '" points="' + top +
+        '" fill="' + topFill + '" stroke="rgba(0,0,0,.22)" stroke-width="1"/>' +
+        '<polygon points="' + [v[3], v[4], v[5]].map(q => f2(q[0]) + ',' + f2(q[1])).join(' ') +
+        ' ' + f2(p.x) + ',' + f2(y) + '" fill="#ffffff" opacity=".07"/>';
+
+      if (t === 'f') {
+        feats += useSp('sp-tree', p.x - 17, y + 8, 27) + useSp('sp-tree', p.x + 8, y + 13, 22);
+      } else if (t === 'm') {
+        feats += '<path d="M' + (p.x - 27) + ' ' + (y + 12) + ' L' + (p.x - 9) + ' ' + (y - 26) + ' L' + (p.x + 7) + ' ' + (y + 12) + 'Z" fill="#9c9384"/>' +
+          '<path d="M' + (p.x - 9) + ' ' + (y - 26) + ' L' + (p.x + 7) + ' ' + (y + 12) + ' L' + (p.x - 9) + ' ' + (y + 12) + 'Z" fill="#79715e"/>' +
+          '<path d="M' + (p.x - 9) + ' ' + (y - 26) + ' l-5.5 12 l5.5 -2.6 l4.6 3.4 l5.4 -5.4Z" fill="#f4f7fa" opacity=".92"/>' +
+          '<path d="M' + (p.x - 1) + ' ' + (y + 12) + ' L' + (p.x + 15) + ' ' + (y - 14) + ' L' + (p.x + 30) + ' ' + (y + 12) + 'Z" fill="#8b8271"/>';
+      } else if (t === 'h') {
+        feats += '<path d="M' + (p.x - 25) + ' ' + (y + 7) + ' q11 -16 22 -3 q10 -13 24 3Z" fill="#7fa055" opacity=".9"/>';
+      } else if (t === 'd') {
+        feats += '<g opacity=".45" fill="#bda36c"><ellipse cx="' + (p.x - 12) + '" cy="' + (y + 6) + '" rx="10" ry="3"/>' +
+          '<ellipse cx="' + (p.x + 13) + '" cy="' + (y - 3) + '" rx="7" ry="2.4"/></g>';
+      } else if (t === 'w' || t === 'c') {
+        feats += '<g opacity=".3" stroke="#cdeaff" stroke-width="1.6" fill="none" stroke-linecap="round">' +
+          '<path d="M' + (p.x - 17) + ' ' + (y + 3) + ' q6 -4 12 0 q6 4 12 0"/></g>';
+      }
+    }
+  }
+
+  const rp = RIVER.map((q, i) => { const p = hexPos(q[0], q[1]); return (i ? 'L' : 'M') + p.x.toFixed(0) + ' ' + p.y.toFixed(0); }).join(' ');
+  const river = '<path d="' + rp + '" fill="none" stroke="#1f6ea8" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>' +
+    '<path d="' + rp + '" fill="none" stroke="#4aa3d8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<path d="' + rp + '" fill="none" stroke="#a8dcf5" stroke-width="2.4" stroke-linecap="round" opacity=".6"/>';
+
+  $('hexTiles').innerHTML = tiles;
+  $('hexFeatures').innerHTML = river + feats;
+  $('hexBorder').innerHTML = '';
+  $('hexBld').innerHTML = '';
+  $('hexCits').innerHTML = '';
+  $('hexLabels').innerHTML = '';
+  citizens = [];
+}
+
+/* ---------- 영토 경계선 ---------- */
+function borderPath() {
+  let d = '';
+  for (let r = 0; r < MAPH; r++) {
+    for (let c = 0; c < MAPW; c++) {
+      if (!isOwned(c, r)) continue;
+      const p = hexPos(c, r), y = p.y - liftOf(c, r);
+      const v = hexPoints(p.x, y), nb = neighbors(c, r);
+      for (let k = 0; k < 6; k++) {
+        const a = v[k], b = v[(k + 1) % 6];
+        const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+        let best = null, bd = Infinity;
+        nb.forEach(n => {
+          const q = hexPos(n[0], n[1]);
+          const dd = (q.x - mx) * (q.x - mx) + (q.y - my) * (q.y - my);
+          if (dd < bd) { bd = dd; best = n; }
+        });
+        if (!best || !isOwned(best[0], best[1]))
+          d += 'M' + a[0].toFixed(1) + ' ' + a[1].toFixed(1) + 'L' + b[0].toFixed(1) + ' ' + b[1].toFixed(1);
+      }
+    }
+  }
+  return d;
+}
+
+/* ---------- 도시 배너 ---------- */
+function cityBanner(slot, title, num, tone) {
+  const p = hexPos(slot[0], slot[1]);
+  const w = Math.max(78, title.length * 13 + 46), h = 22;
+  const bx = p.x - w / 2, by = p.y - liftOf(slot[0], slot[1]) - 78;
+  const fill = tone === 'colony' ? '#6d4f10' : tone === 'bad' ? '#71191c' : '#1b3220';
+  const line = tone === 'colony' ? '#e6bd5c' : tone === 'bad' ? '#fca5a5' : '#8fe08f';
+  const star = 'M0 -6.4 L1.9 -2 L6.6 -1.5 L3 1.7 L4.1 6.4 L0 3.9 L-4.1 6.4 L-3 1.7 L-6.6 -1.5 L-1.9 -2 Z';
+  return '<g>' +
+    '<rect x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + w + '" height="' + h + '" rx="5" fill="' + fill + '" fill-opacity=".93" stroke="' + line + '" stroke-width="1.3"/>' +
+    '<path d="M' + (p.x - 5).toFixed(1) + ' ' + (by + h).toFixed(1) + 'L' + (p.x + 5).toFixed(1) + ' ' + (by + h).toFixed(1) + 'L' + p.x.toFixed(1) + ' ' + (by + h + 7).toFixed(1) + 'Z" fill="' + fill + '" fill-opacity=".93"/>' +
+    '<path d="' + star + '" fill="#f6d264" transform="translate(' + (bx + 13).toFixed(1) + ',' + (by + 11).toFixed(1) + ')"/>' +
+    '<text x="' + (bx + 24).toFixed(1) + '" y="' + (by + 15.5).toFixed(1) + '" fill="#ffffff" font-size="13">' + title + '</text>' +
+    (num === null ? '' : '<text x="' + (bx + w - 9).toFixed(1) + '" y="' + (by + 15.5).toFixed(1) + '" fill="' + line + '" font-size="13" text-anchor="end">' + num + '</text>') +
+    '</g>';
+}
+
+/* ---------- 맵 갱신 ---------- */
+function renderMap() {
+  const era = ERAS[techCount()];
+  const B = k => pic(IMG.building[k]);          // 외부 이미지가 있으면 그것을, 없으면 내장 SVG
+  let html = putHex(SLOT.center, B('center') || era.center, 56);
+
+  houseSlots().forEach(slot => { html += putHex(slot, B('house') || era.house, 36); });
+
+  if (has('print')) html += putHex(SLOT.library, B('library') || 'sp-library', 41);
+  if (has('peni')) html += putHex(SLOT.hospital, B('hospital') || 'sp-hospital', 41);
+  if (has('steam')) {
+    html += putHex(SLOT.factory, B('factory') || 'sp-factory', 43);
+    if (!S.protest) html += putHex(SLOT.rail, B('rail') || 'sp-train', 38);
+  }
+  if (has('ict')) html += putHex(SLOT.antenna, B('antenna') || 'sp-antenna', 38);
+  if (S.protest) html += putHex(SLOT.protest, 'sp-protest', 33, 'iso-flag');
+
+  // 시민이 지은 시설
+  Object.keys(S.built).forEach(key => {
+    const [c, r] = key.split(',').map(Number);
+    const I = IMPROVE[terrainAt(c, r)];
+    if (I) html += putHex([c, r], I.sp, I.sp === 'sp-wheat' || I.sp === 'sp-sprout' ? 30 : 34);
+  });
+
+  SLOT.farms.forEach(slot => {
+    const tile = document.getElementById('hx-' + slot[0] + '-' + slot[1]);
+    if (tile) tile.setAttribute('fill', has('fert') ? '#c9a53a' : (S.pop > 12 ? '#98993f' : tile.dataset.top));
+    if (has('fert') || S.pop > 12) html += putHex(slot, has('fert') ? 'sp-wheat' : 'sp-sprout', 32);
+  });
+  $('hexBld').innerHTML = html;
+
+  const bd = borderPath();
+  $('hexBorder').innerHTML =
+    '<path d="' + bd + '" fill="none" stroke="#f59e0b" stroke-width="4" stroke-opacity=".9" stroke-linecap="round"/>' +
+    '<path d="' + bd + '" fill="none" stroke="#fde68a" stroke-width="1.4" stroke-opacity=".85"/>';
+
+  let labels = cityBanner(SLOT.center, era.name, S.pop, 'good');
+  $('hexLabels').innerHTML = labels;
+
+  const p = clamp(S.poll / 100, 0, 1);
+  $('hexMap').style.filter = p > 0
+    ? 'saturate(' + (1 - p * 0.65) + ') sepia(' + (p * 0.5) + ') brightness(' + (1 - p * 0.22) + ')'
+    : 'none';
+
+  renderPick();
+  syncCitizens();
+}
+
+function citizenFace() {
+  if (has('ict')) return ['sp-p-tech', 'sp-p-scholar', 'sp-p-tech', 'sp-p-doctor'];
+  if (has('peni')) return ['sp-p-doctor', 'sp-p-scholar', 'sp-p-doctor', 'sp-p-worker'];
+  if (has('steam')) return ['sp-p-worker', 'sp-p-worker', 'sp-p-scholar', 'sp-p-farmer'];
+  if (has('print')) return ['sp-p-scholar', 'sp-p-farmer', 'sp-p-scholar', 'sp-p-farmer'];
+  return ['sp-p-farmer', 'sp-p-farmer', 'sp-p-farmer', 'sp-p-worker'];
+}
+
+function syncCitizens() {
+  const layer = $('hexCits');
+  if (!layer) return;
+  const want = clamp(Math.round(S.pop / 4), 1, 9);
+  const faces = citizenFace();
+  const mood = S.food < S.pop ? 'sp-mood-hungry' : S.poll >= 50 ? 'sp-mood-sick' : '';
+
+  while (citizens.length > want) { const z = citizens.pop(); z.el.remove(); }
+  while (citizens.length < want) {
+    let c, r, guard = 0;
+    do { c = 2 + Math.floor(Math.random() * (MAPW - 4)); r = Math.floor(Math.random() * MAPH); guard++; }
+    while (!isWalk(c, r) && guard < 80);
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'hex-cit');
+    const p = hexPos(c, r);
+    g.setAttribute('transform', 'translate(' + p.x.toFixed(1) + ',' + (p.y - liftOf(c, r)).toFixed(1) + ')');
+    layer.appendChild(g);
+    citizens.push({ el: g, c, r });
+  }
+  citizens.forEach((z, i) => {
+    z.el.innerHTML = useSp(faces[i % faces.length], 0, 6, 26, '', 40 / 32) +
+      (mood ? '<use href="#' + mood + '" x="6" y="-30" width="14" height="14"/>' : '');
+  });
+}
+
+function wanderCitizens() {
+  if (!S || S.over) return;
+  citizens.forEach(z => {
+    if (Math.random() < 0.5) return;
+    const nb = neighbors(z.c, z.r);
+    const n = nb[Math.floor(Math.random() * nb.length)];
+    if (!isWalk(n[0], n[1])) return;
+    z.c = n[0]; z.r = n[1];
+    const p = hexPos(z.c, z.r);
+    z.el.setAttribute('transform', 'translate(' + p.x.toFixed(1) + ',' + (p.y - liftOf(z.c, z.r)).toFixed(1) + ')');
+  });
+}
+
+/* =========================================================
+   🏗️ 타일 건설 시스템
+   지형마다 산출이 다르고, 강에 접하면 식량이 늘어납니다.
+   사막·산은 과학기술을 개발해야 비로소 쓸모가 생깁니다.
+   ========================================================= */
+const BUILD_COST = 8;                    // 건설 1회 식량 비용
+const IMPROVE = {
+  g: { name: '농장',   sp: 'sp-wheat',   food: 3, know: 0, req: null,   note: '초원의 밀밭' },
+  p: { name: '마을',   sp: 'sp-hut',     food: 1, know: 1, req: null,   note: '평원의 마을' },
+  h: { name: '광산',   sp: 'sp-mine',    food: 0, know: 2, req: null,   note: '언덕의 광물' },
+  f: { name: '벌목장', sp: 'sp-lumber',  food: 1, know: 1, req: null,   note: '숲의 목재' },
+  d: { name: '관개지', sp: 'sp-sprout',  food: 3, know: 0, req: 'fert',  note: '사막을 농지로!' },
+  m: { name: '통신소', sp: 'sp-antenna', food: 0, know: 3, req: 'ict',   note: '산 위 중계소' }
+};
+const RIVER_SET = new Set(RIVER.map(p => p[0] + ',' + p[1]));
+const riverAdj = (c, r) => RIVER_SET.has(c + ',' + r) ||
+  neighbors(c, r).some(n => RIVER_SET.has(n[0] + ',' + n[1]));
+
+/* 도시 건물이 차지한 자리 — 현재 실제로 서 있는 집만 예약합니다 */
+const houseCount = () => clamp(Math.round(S.pop / 6), 1, SLOT.houses.length);
+function houseSlots() {
+  return SLOT.houses.filter(p => !S.built[p[0] + ',' + p[1]]).slice(0, houseCount());
+}
+function reservedKeys() {
+  const s = new Set();
+  const add = p => s.add(p[0] + ',' + p[1]);
+  add(SLOT.center); SLOT.farms.forEach(add); SLOT.colony.forEach(add);
+  houseSlots().forEach(add);
+  [SLOT.library, SLOT.hospital, SLOT.factory, SLOT.rail, SLOT.antenna, SLOT.protest, SLOT.chain].forEach(add);
+  return s;
+}
+
+function tileYield(c, r) {
+  const I = IMPROVE[terrainAt(c, r)];
+  if (!I) return null;
+  let food = I.food, know = I.know;
+  if (food > 0 && riverAdj(c, r)) food += 2;                 // 💧 강 보너스
+  return { food, know, I };
+}
+function buildBlock(c, r) {
+  if (!isLand(c, r)) return '바다에는 지을 수 없습니다';
+  if (!isOwned(c, r)) return '우리 영토가 아닙니다 (기술을 개발하면 영토가 넓어집니다)';
+  if (S.built[c + ',' + r]) return '이미 시설이 있습니다';
+  if (reservedKeys().has(c + ',' + r)) return '도시 건물이 있는 자리입니다';
+  const I = IMPROVE[terrainAt(c, r)];
+  if (!I) return '지을 수 없는 지형입니다';
+  if (I.req && !has(I.req)) return TECH[I.req].name + '을(를) 개발해야 합니다';
+  return null;
+}
+const canBuild = (c, r) => !buildBlock(c, r);
+
+function builtYield() {
+  let f = 0, k = 0;
+  Object.keys(S.built).forEach(key => {
+    const [c, r] = key.split(',').map(Number);
+    const y = tileYield(c, r);
+    if (y) { f += y.food; k += y.know; }
+  });
+  return { f, k };
+}
+
+function enterBuildMode() {
+  if (S.over || S.busy || S.ap <= 0 || S.food < BUILD_COST) return;
+  S.buildMode = true;
+  sfx('click');
+  showBanner('🏗️ 지을 타일을 선택하세요 (강 옆은 식량 +2)');
+  render();
+}
+function cancelBuild() { S.buildMode = false; render(); }
+
+function doBuild(c, r) {
+  if (!S.buildMode || !canBuild(c, r) || S.ap <= 0 || S.food < BUILD_COST) return;
+  const y = tileYield(c, r);
+  S.built[c + ',' + r] = terrainAt(c, r);
+  S.food -= BUILD_COST;
+  S.ap--;
+  S.buildMode = false;
+  sfx('good');
+  log('🏗️ [건설] ' + y.I.name + ' 완성! 매 턴 ' +
+    (y.food ? '🍎+' + y.food : '') + (y.food && y.know ? ' · ' : '') + (y.know ? '💡+' + y.know : '') +
+    (y.food > y.I.food ? ' <span class="text-sky-300">(강 보너스 +2)</span>' : ''), 'tech', true);
+  const yieldTxt = (y.food ? '🍎+' + y.food : '') + (y.food && y.know ? ' ' : '') + (y.know ? '💡+' + y.know : '');
+  bubble(y.I.name + ' 완성! 매 턴 ' + yieldTxt, 'good', 100);
+  floatText(yieldTxt, 'text-emerald-300');
+  render();
+}
+
+/* 건설 모드에서 후보 타일을 밝게 표시하고 산출을 미리 보여줍니다 */
+function renderPick() {
+  const g = $('hexPick');
+  if (!g) return;
+  if (!S.buildMode) { g.innerHTML = ''; return; }
+  let h = '';
+  for (let r = 0; r < MAPH; r++) {
+    for (let c = 0; c < MAPW; c++) {
+      if (!canBuild(c, r)) continue;
+      const y = tileYield(c, r), p = hexPos(c, r), lift = liftOf(c, r);
+      const v = hexPoints(p.x, p.y - lift).map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' ');
+      const river = y.food > y.I.food;
+      h += '<polygon class="pick" data-c="' + c + '" data-r="' + r + '" points="' + v +
+        '" fill="#fbbf24" fill-opacity=".2" stroke="' + (river ? '#7dd3fc' : '#fde68a') + '" stroke-width="2.6"/>' +
+        '<g style="pointer-events:none">' +
+        '<rect x="' + (p.x - 26).toFixed(1) + '" y="' + (p.y - lift - 9).toFixed(1) + '" width="52" height="18" rx="4" fill="#0b1220" fill-opacity=".8"/>' +
+        '<text x="' + p.x.toFixed(1) + '" y="' + (p.y - lift + 4).toFixed(1) + '" font-size="11.5" text-anchor="middle" fill="#fff">' +
+        (y.food ? '🍎' + y.food : '') + (y.food && y.know ? ' ' : '') + (y.know ? '💡' + y.know : '') + '</text></g>';
+    }
+  }
+  g.innerHTML = h;
+  g.querySelectorAll('polygon').forEach(el =>
+    el.addEventListener('click', () => doBuild(+el.dataset.c, +el.dataset.r)));
+}
+
+function showBanner(text) {
+  const b = $('mapBanner');
+  b.textContent = text;
+  b.classList.remove('hidden');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.add('hidden'), 3600);
+}
+
+/* ---------- 상태 ---------- */
+let S;
+function newState() {
+  return {
+    turn: 1, pop: 10, food: 50, know: 20, poll: 0,
+    techs: { print: false, fert: false, steam: false, peni: false, ict: false },
+    techTurn: {}, superstition: 0, protest: false,
+    over: false, busy: false, quizId: null,
+    ap: 2, used: [], storeBonus: 0, built: {}, buildMode: false, choices: {},
+    war: null,
+    schedule: makeSchedule(),                       // 이번 판의 위기 순서 (매번 다름)
+    pendingSuperstition: false,
+    foeName: pickN(WAR_FOE, 1)[0],
+    logCnt: 0, history: [], deaths: 0, purified: 0
+  };
+}
+
+/* ---------- 유틸 ---------- */
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const has = id => S.techs[id];
+const techCount = () => TECHS.filter(t => S.techs[t.id]).length;
+const foodCap = () => ((has('steam') && !S.protest) ? 250 : 100) + S.storeBonus;
+function foodProd() {
+  let f = has('fert') ? BAL.FOOD_FERT : BAL.FOOD_BASE;
+  f += builtYield().f;               // 🏗️ 시민이 지은 시설의 산출
+  if (chose('fert', 'b')) f += 15;   // ⚖️ 비료 과다 사용
+  if (chose('steam', 'b')) f += 10;  // ⚖️ 도시 밖 공장
+  if (chose('peni', 'b')) f += 12;   // ⚖️ 가축 항생제
+  return f;
+}
+function knowGain() {
+  if (S.superstition > 0) return 0;
+  let g = S.pop * (has('print') ? 2 : 1);        // 👥 인구 1명당 💡1 (인쇄술 개발 시 2배)
+  g += builtYield().k;               // 🏗️ 광산·통신소 등 시설의 지식 산출
+  if (chose('print', 'a')) g += 5;                     // ⚖️ 과학 서적
+  if (chose('steam', 'a') && !S.protest) g += 10;      // ⚖️ 도시 안 공장
+  if (chose('ict', 'b')) g += 25;                      // ⚖️ 데이터 수집
+  if (has('steam') && !S.protest) g += 10;
+  if (has('ict')) g += 50;
+  return g;
+}
+
+/* ---------- 사운드 (WebAudio) ---------- */
+let actx = null;
+function sfx(type) {
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    const map = {
+      click: [520, 0.06, 'square'], good: [880, 0.16, 'triangle'],
+      bad: [140, 0.28, 'sawtooth'], turn: [660, 0.12, 'sine'], win: [1046, 0.35, 'triangle']
+    };
+    const [f, d, w] = map[type] || map.click;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = w; o.frequency.value = f;
+    g.gain.setValueAtTime(0.06, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + d);
+    o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+  } catch (e) { /* 무음 환경 무시 */ }
+}
+
+/* 위기·전쟁이 끝나면 '시대의 사건' 카드를 뽑고 턴을 넘깁니다 */
+function endCrisis() {
+  const done = () => { S.busy = false; render(); checkDefeat(); };
+  if (S.over || S.pop <= 0) { done(); return; }
+  // 카드는 "고르는 것", 돌발 사건은 "닥치는 것"
+  drawCards(done);
+}
+
+/* =========================================================
+   ⚔️ 전쟁 시스템 (등장 턴은 매 판 무작위)
+   승리 → 식민지 획득 / 패배 → 식민지로 전락
+   적 전력은 "등장 턴"에 비례해 정해지므로 언제 나와도 균형이 맞습니다.
+   ========================================================= */
+/* =========================================================
+   ⚔️ 전쟁 — 게임에 딱 한 번, 후반에 찾아옵니다
+   국력 = 인구 + (보유 기술 수 × 15)
+   기술을 쌓은 문명만이 스스로를 지킬 수 있습니다.
+   ========================================================= */
+const WAR_FOE = ['북방 기마 부족', '사막의 약탈자', '바다 건너 제국'];
+const warPower = t => Math.round(t * 7 + 12);      // 8턴 ≈ 68 · 10턴 ≈ 82
+
+function powerParts() {
+  return [
+    { label: '👥 인구', v: S.pop },
+    { label: '🧪 보유 기술 ' + techCount() + '개', v: techCount() * 15 }
+  ];
+}
+const myPower = () => Math.max(0, powerParts().reduce((a, b) => a + b.v, 0));
+
+function warModal(turn) {
+  const enemy = S.foeName, power = warPower(turn);
+  const mine = myPower(), parts = powerParts();
+  const canTribute = S.food >= 40 && S.know >= 20;
+  const max = Math.max(mine, power);
+
+  const bar = (label, val, color) =>
+    '<div class="mb-1"><div class="flex justify-between text-[11px] text-slate-300"><span>' + label + '</span><span>' + val + '</span></div>' +
+    '<div class="h-2.5 bg-slate-800 rounded-full overflow-hidden"><div class="h-full ' + color + '" style="width:' + clamp(val / max * 100, 3, 100) + '%"></div></div></div>';
+
+  // 승리 확률 = 우리 국력 ÷ (우리 + 적).  2:1이면 2번 중 1번은 이깁니다.
+  const rate = Math.round(mine / (mine + power) * 100);
+
+  showEvent('⚔️', turn + '턴 · ' + enemy + '의 침입',
+    '<b class="text-rose-300">' + enemy + '</b>이(가) 국경을 넘어왔습니다!<br>' +
+    '<span class="text-slate-400 text-[12px]">과학기술은 문명을 지키는 방패이기도 했습니다.</span>' +
+    '<div class="mt-3 text-left rounded-xl bg-panel border border-line p-2.5">' +
+      bar('🏛️ 우리 국력', mine, 'bg-sky-400') +
+      bar('🏴 ' + enemy, power, 'bg-rose-400') +
+      '<div class="mt-2 text-[11px] text-slate-400">' + parts.map(p => p.label + ' +' + p.v).join(' · ') + '</div>' +
+      '<div class="mt-2 text-center text-[13px] ' + (rate >= 60 ? 'text-emerald-300' : rate >= 40 ? 'text-amber-300' : 'text-rose-300') + '">' +
+        '🎲 승리 확률 <b class="text-xl">' + rate + '%</b> ' +
+        '<span class="text-[11px] text-slate-400">(' + mine + ' : ' + power + ' 의 비율)</span></div>' +
+    '</div>',
+    [
+      { label: '⚔️ 맞서 싸운다 <span class="text-[11px]">(승리 확률 ' + rate + '%)</span>',
+        cls: 'bg-rose-400 border-rose-600 text-slate-900',
+        onClick: () => resolveWar(turn, mine, power, enemy) },
+      { label: '🤝 조공을 바쳐 전쟁을 피한다 <span class="text-[11px]">(🍎40 · 💡20)</span>' + (canTribute ? '' : ' <span class="text-[11px]">자원 부족</span>'),
+        disabled: !canTribute,
+        cls: 'bg-slate-500 border-slate-700 text-slate-900',
+        onClick: () => {
+          S.food -= 40; S.know -= 20;
+          S.war = { result: 'tribute', turn, enemy };
+          log('🤝 [' + turn + '턴 전쟁] 조공을 바쳐 전쟁을 피했습니다. (🍎-40 · 💡-20)', 'warn', true);
+          bubble('싸우지 않는 것도 지혜야…', 'warn', 200);
+          endCrisis();
+        } }
+    ]);
+}
+
+function resolveWar(turn, mine, power, enemy) {
+  // 전력 비율만큼의 확률로 승패가 갈립니다 (2:1이면 2/3 확률로 승리)
+  const rate = mine / (mine + power);
+  const roll = Math.random();
+  const win = roll < rate;
+  const pct = Math.round(rate * 100), rollPct = Math.round(roll * 100);
+  const dice = '🎲 승리 확률 ' + pct + '% · 주사위 ' + rollPct + ' → <b>' + (win ? '승리' : '패배') + '</b>';
+  const dead = Math.floor(S.pop * (win ? 0.1 : 0.3));
+  S.pop -= dead;
+
+  if (win) {
+    S.know += 80; S.food = Math.min(foodCap(), S.food + 60);
+    S.war = { result: 'win', turn, enemy };
+    log('🚩 [' + turn + '턴 전쟁] 승리! (국력 ' + mine + ' vs ' + power + ' · 승률 ' + pct + '%) 전사 ' + dead + '명 · 전리품 💡+80 🍎+60', 'tech', true);
+    sfx('win');
+    try { confetti({ particleCount: 110, spread: 85, origin: { y: .6 } }); } catch (e) {}
+    showEvent('🚩', '승리 — 문명을 지켜냈습니다',
+      dice + '<br>앞선 기술이 우리 문명을 지켰습니다. 전사 <b class="text-rose-300">' + dead + '명</b>,' +
+      ' 전리품으로 <b class="text-emerald-300">💡+80 🍎+60</b>을 얻었습니다.<br>' +
+      '<span class="text-[12px] text-amber-200">🤔 우리를 지킨 것은 무엇이었나요?</span>',
+      [{ label: '🎉 계속한다', onClick: () => endCrisis() }]);
+  } else {
+    const lost = Math.floor(S.food * 0.5);
+    S.food -= lost;
+    S.war = { result: 'lose', turn, enemy };
+    log('💥 [' + turn + '턴 전쟁] 패배… (국력 ' + mine + ' vs ' + power + ' · 승률 ' + pct + '%) 전사 ' + dead + '명 · 식량 ' + lost + ' 약탈', 'bad', true);
+    sfx('bad'); shake();
+    showEvent('💥', '패배 — 큰 피해를 입었습니다',
+      dice + '<br>전사 <b class="text-rose-300">' + dead + '명</b>, 식량 <b class="text-rose-300">' + lost + '</b>을(를) 빼앗겼습니다.<br>' +
+      '<span class="text-[12px] text-amber-200">🤔 기술을 더 쌓았다면 어땠을까요?</span>',
+      [{ label: '😤 다시 일어선다', cls: 'bg-rose-400 border-rose-600 text-slate-900', onClick: () => endCrisis() }]);
+  }
+}
+
+/* =========================================================
+   🃏 시대의 사건 — 매 턴 카드 한 장을 뽑습니다
+   좋은 카드 사이에 나쁜 카드가 섞여 있어 무엇이 나올지 알 수 없습니다.
+   단, 기술·프로젝트를 갖추면 재해를 막아냅니다. (🛡️ guard)
+   ========================================================= */
+const CARDS = [
+  /* ---------- 좋은 일 ---------- */
+  { icon: '🌧️', name: '단비',        eff: '🍎+25',
+    note: '오랜만에 내린 비로 밭이 살아났습니다.',
+    run: () => { S.food = Math.min(foodCap(), S.food + 25); } },
+  { icon: '🧑‍🔬', name: '떠돌이 학자', eff: '💡+30',
+    note: '먼 곳에서 온 학자가 새로운 지식을 전했습니다.',
+    run: () => { S.know += 30; } },
+  { icon: '⛏️', name: '광맥 발견',    eff: '💡+20',
+    note: '언덕에서 새로운 광물이 발견되었습니다.',
+    run: () => { S.know += 20; } },
+  { icon: '👨‍👩‍👧', name: '이주민 합류', eff: '👥+4',
+    note: '살 곳을 찾던 사람들이 우리 문명에 합류했습니다.',
+    run: () => { S.pop += 4; } },
+  { icon: '📜', name: '고문헌 발굴',  eff: '💡+15 🍎+10',
+    note: '옛사람들의 기록에서 농사법과 지혜를 배웠습니다.',
+    run: () => { S.know += 15; S.food = Math.min(foodCap(), S.food + 10); } },
+  { icon: '🏕️', name: '개척단 합류',  eff: '💡+20 🍎+20',
+    note: '새 땅을 찾던 개척단이 우리 문명에 합류했습니다.',
+    run: () => { S.know += 20; S.food = Math.min(foodCap(), S.food + 20); } },
+  { icon: '💨', name: '맑은 바람',    eff: '🌫️-12%',
+    note: '큰 바람이 불어 하늘이 한결 맑아졌습니다.',
+    run: () => { S.poll = Math.max(0, S.poll - 12); } },
+  { icon: '🛠️', name: '장인 방문',    eff: '⚡+1 (이번 턴)',
+    note: '솜씨 좋은 장인이 일손을 보태 주었습니다.',
+    run: () => { S.ap += 1; } },
+  { icon: '🎓', name: '과거 급제',    eff: '💡+25',
+    note: '젊은 인재들이 학문의 길에 들어섰습니다.',
+    run: () => { S.know += 25; } },
+  { icon: '🍀', name: '뜻밖의 행운',  eff: '🍎+15 💡+15',
+    note: '이런 날도 있는 법이지요.',
+    run: () => { S.food = Math.min(foodCap(), S.food + 15); S.know += 15; } },
+  { icon: '🌟', name: '천재의 등장',  eff: '💡+35',
+    note: '한 세대에 한 번 나올 만한 인재가 태어났습니다.',
+    run: () => { S.know += 35; } },
+  { icon: '👶', name: '베이비붐',     eff: '👥+5',
+    note: '아이 울음소리가 마을에 가득합니다.',
+    run: () => { S.pop += 5; } },
+
+  /* ---------- 주고받는 일 ---------- */
+  { icon: '🤝', name: '이웃과 교역',  eff: '🍎-15 → 💡+35',
+    note: '식량을 내주고 새로운 기술을 배워 왔습니다.',
+    run: () => { S.food = Math.max(0, S.food - 15); S.know += 35; } },
+  { icon: '🏺', name: '유물 판매',    eff: '💡-10 → 🍎+30',
+    note: '귀한 기록을 내주고 식량을 얻었습니다. 아쉬운 거래였습니다.',
+    run: () => { S.know = Math.max(0, S.know - 10); S.food = Math.min(foodCap(), S.food + 30); } },
+  { icon: '⚗️', name: '위험한 실험',  eff: '💡+45 · 🌫️+8',
+    note: '큰 발견을 얻었지만 실험 폐기물이 강으로 흘러갔습니다.',
+    run: () => { S.know += 45; S.poll = clamp(S.poll + 8, 0, 100); } },
+
+  /* ---------- 나쁜 일 (전체의 약 1/4) ---------- */
+  { icon: '🔥', name: '큰 화재', bad: true, eff: '🍎-20',
+    note: '창고에 불이 번져 저장해 둔 식량을 잃었습니다.',
+    run: () => { S.food = Math.max(0, S.food - 20); } },
+  { icon: '🐛', name: '병충해', bad: true, eff: '🍎-18',
+    guard: 'seed', guardKind: 'proj', guardMsg: '🌾 종자 은행의 튼튼한 품종이 병충해를 막아냈습니다!',
+    note: '해충이 들판을 휩쓸었습니다.',
+    run: () => { S.food = Math.max(0, S.food - 18); } },
+  { icon: '😷', name: '풍토병', bad: true, eff: '👥-3',
+    guard: 'vaccine', guardKind: 'proj', guardMsg: '🧬 백신 연구소가 미리 접종을 마쳐 풍토병을 막아냈습니다!',
+    note: '낯선 병이 돌아 사람들이 앓아누웠습니다.',
+    run: () => { S.pop = Math.max(1, S.pop - 3); } },
+  { icon: '💸', name: '기술 유출', bad: true, eff: '💡-25',
+    note: '어렵게 얻은 기록이 다른 문명으로 새어 나갔습니다.',
+    run: () => { S.know = Math.max(0, S.know - 25); } },
+  { icon: '🌪️', name: '폭풍', bad: true, eff: '시설 1곳 파괴',
+    note: '거센 폭풍이 지나가며 시설 하나를 무너뜨렸습니다.',
+    run: () => {
+      const keys = Object.keys(S.built);
+      if (keys.length) { const k = keys[Math.floor(Math.random() * keys.length)]; delete S.built[k]; }
+      else S.food = Math.max(0, S.food - 12);
+    } }
+];
+
+/* 매 턴 카드 한 장을 뽑습니다. 좋은 카드 사이에 나쁜 카드가 섞여 있어
+   무엇이 나올지 알 수 없습니다. 다만 기술·프로젝트가 재해를 막아주기도 합니다. */
+/* 카드 세 장이 뒷면으로 놓입니다. 학생이 한 장을 골라 뒤집으면
+   그 카드의 효과가 적용되고, 나머지 두 장도 무엇이었는지 공개됩니다. */
+function drawCards(after) {
+  const three = pickN(CARDS, 3);
+  const wrap = $('drawCards');
+  const guardOf = c => c.guard && (has(c.guard));
+
+  $('drawTitle').textContent = S.turn + '턴 · 카드를 한 장 고르세요';
+  $('drawHint').textContent = '어떤 일이 기다리고 있을지는 아무도 모릅니다.';
+  $('drawResult').className = 'hidden';
+  $('drawResult').innerHTML = '';
+  $('drawOk').className = 'hidden';
+
+  wrap.innerHTML = three.map((c, i) =>
+    '<div class="card3d" data-i="' + i + '">' +
+      '<div class="card-inner">' +
+        '<div class="card-face card-back"><span>❓</span><div class="text-[11px] text-slate-300 mt-1">뒤집기</div></div>' +
+        '<div class="card-face card-front ' + (c.bad ? 'card-bad' : 'card-good') + '">' +
+          '<div class="text-3xl">' + c.icon + '</div>' +
+          '<div class="text-[12px] text-white leading-tight mt-1">' + c.name + '</div>' +
+          '<div class="text-[11px] ' + (c.bad ? 'text-rose-200' : 'text-emerald-200') + ' leading-tight mt-0.5">' + c.eff + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>').join('');
+
+  let picked = false;
+  wrap.querySelectorAll('.card3d').forEach(el => {
+    el.addEventListener('click', () => {
+      if (picked) return;
+      picked = true;
+      const c = three[+el.dataset.i];
+      el.classList.add('flipped', 'done');
+      sfx('click');
+
+      // 나머지 카드도 잠시 뒤 공개 — "저걸 골랐다면?"
+      setTimeout(() => {
+        wrap.querySelectorAll('.card3d').forEach(o => {
+          if (o !== el) { o.classList.add('flipped', 'done', 'missed'); }
+        });
+      }, 420);
+
+      setTimeout(() => {
+        const guarded = guardOf(c);
+        const box = $('drawResult');
+
+        if (guarded) {
+          log('🛡️ [시대의 사건] ' + c.icon + ' ' + c.name + ' — ' + c.guardMsg, 'good', true);
+          showBanner('🛡️ ' + c.guardMsg);
+          bubble('과학이 우릴 지켰어!', 'good', 150);
+          sfx('good');
+          box.className = 'mt-3 rounded-xl border-2 p-3 border-emerald-500 bg-emerald-900/30';
+          box.innerHTML = '<div class="text-lg text-emerald-300">🛡️ 막아냈습니다!</div>' +
+            '<div class="text-[13px] text-white mt-1">' + c.guardMsg + '</div>' +
+            '<div class="text-[12px] text-slate-300 mt-1">준비된 문명은 불운에도 흔들리지 않습니다.</div>';
+        } else {
+          c.run();
+          log((c.bad ? '⚡' : '🃏') + ' [시대의 사건] ' + c.icon + ' <b>' + c.name + '</b> — ' + c.eff, c.bad ? 'bad' : 'good', true);
+          showBanner(c.icon + ' ' + c.name + ' (' + c.eff + ')');
+          bubble(c.bad ? '이런 일이 생기다니…' : c.name + '!', c.bad ? 'bad' : 'good', 150);
+          if (c.bad) { shake(); sfx('bad'); } else { sfx('good'); }
+          floatText(c.icon, c.bad ? 'text-rose-300' : 'text-emerald-300');
+          box.className = 'mt-3 rounded-xl border-2 p-3 ' +
+            (c.bad ? 'border-rose-500 bg-rose-900/30' : 'border-emerald-500 bg-emerald-900/25');
+          box.innerHTML = '<div class="text-lg ' + (c.bad ? 'text-rose-300' : 'text-emerald-300') + '">' +
+            c.icon + ' ' + c.name + ' — ' + c.eff + '</div>' +
+            (c.note ? '<div class="text-[12px] text-slate-300 mt-1">' + c.note + '</div>' : '');
+        }
+        $('drawHint').textContent = '고르지 않은 카드에는 이런 일이 들어 있었습니다.';
+        $('drawOk').className = 'mt-3 w-full rounded-xl border-b-4 border-sky-700 bg-sky-500 text-white py-3 text-base active:scale-[.98] transition';
+        render();
+      }, 620);
+    });
+  });
+
+  $('drawOk').onclick = () => {
+    sfx('click');
+    $('drawModal').classList.add('hidden');
+    $('drawModal').classList.remove('flex');
+    after();
+  };
+
+  $('drawModal').classList.remove('hidden');
+  $('drawModal').classList.add('flex');
+}
+
+/* =========================================================
+   턴당 행동 (자유도 · 행동력 ⚡2)
+   ========================================================= */
+const AP_PER_TURN = 2;
+const ACTIONS = [
+  {
+    id: 'build', icon: '🏗️', name: '시설 건설',
+    desc: () => S.buildMode ? '타일을 고르세요' : '🍎-' + BUILD_COST + ' → 영구 산출',
+    can: () => S.food >= BUILD_COST,
+    keep: true,                       // 타일을 고를 때까지 행동력을 쓰지 않음
+    run: () => enterBuildMode()
+  },
+  {
+    id: 'clean', icon: '🌱', name: '환경 정화',
+    desc: () => '💡-30 → 🌫️ -25%',
+    can: () => S.know >= 30 && S.poll > 0,
+    run: () => purify()
+  },
+  {
+    id: 'scout', icon: '🧭', name: '탐험 보내기',
+    desc: () => '🍎-5 → 💡+5 · 🍎 랜덤',
+    can: () => S.food >= 5,
+    run: () => {
+      S.food -= 5;
+      const k = 5, f = [0, 5, 10, 20][Math.floor(Math.random() * 4)];
+      S.know += k; S.food = Math.min(foodCap(), S.food + f);
+      const gain = '💡+' + k + (f ? ' 🍎+' + f : '');
+      log('🧭 [행동] 탐험대가 돌아왔습니다. <b>' + gain + '</b>' +
+        (f ? ' 발견! <span class="text-slate-500">(보급 🍎-5 소모)</span>' : ' <span class="text-slate-500">(새 땅은 못 찾고 보급 🍎-5만 썼습니다)</span>'), f ? 'good' : 'warn');
+      bubble(f ? '새 땅 발견! ' + gain : '빈손이에요… ' + gain, f ? 'good' : 'warn', 100);
+      floatText(gain, f ? 'text-emerald-300' : 'text-amber-300');
+    }
+  }
+];
+
+function renderActions() {
+  $('apDots').innerHTML = Array.from({ length: AP_PER_TURN }, (_, i) =>
+    '<span class="text-lg leading-none">' + (i < S.ap ? '⚡' : '<span class="opacity-25">⚡</span>') + '</span>').join('');
+
+  $('actionGrid').innerHTML = ACTIONS.filter(a => !a.show || a.show()).map(a => {
+    const used = S.used.includes(a.id);
+    const active = a.keep && S.buildMode;
+    const ok = !used && S.ap > 0 && a.can() && !S.over && !S.busy;
+    return '<button data-act="' + a.id + '" ' + (ok ? '' : 'disabled') +
+      ' class="act-btn rounded-xl border-2 p-1.5 text-left transition active:scale-95 ' +
+      (active ? 'border-amber-400 bg-amber-500/25 ring-2 ring-amber-400/50'
+        : used ? 'border-line bg-panel2/40 opacity-45'
+        : ok ? 'border-sky-500/70 bg-sky-900/25 hover:bg-sky-800/40'
+        : 'border-line bg-panel2/50 opacity-50 cursor-not-allowed') + '">' +
+      '<div class="flex items-center gap-1.5"><span class="text-xl">' + a.icon + '</span>' +
+      '<span class="text-[13px] text-white leading-tight">' + a.name + '</span></div>' +
+      '<div class="text-[11px] ' + (used ? 'text-slate-500' : 'text-sky-200') + ' mt-0.5 leading-tight">' +
+      (used ? '이번 턴 사용함' : a.desc()) + '</div></button>';
+  }).join('');
+
+  $('actionGrid').querySelectorAll('.act-btn').forEach(b =>
+    b.addEventListener('click', () => doAction(b.dataset.act)));
+}
+
+function doAction(id) {
+  const a = ACTIONS.find(x => x.id === id);
+  if (!a || S.over || S.busy || S.ap <= 0 || S.used.includes(id) || !a.can()) return;
+  if (a.keep) {                       // 건설: 타일을 선택하는 순간에 자원을 소모
+    if (S.buildMode) { cancelBuild(); return; }
+    a.run();
+    return;
+  }
+  sfx('click');
+  S.ap--; S.used.push(id);
+  a.run();
+  render();
+}
+
+/* ---------- 로그 (한 줄씩 차례로 공개되는 연출) ---------- */
+let logQueue = [], logTimer = null, onDrain = null;
+const LOG_SPEED = 330;
+
+function flushTick() {
+  const it = logQueue.shift();
+  if (!it) {
+    clearInterval(logTimer); logTimer = null;
+    if (onDrain) { const f = onDrain; onDrain = null; f(); }
+    return;
+  }
+  paintLog(it);
+}
+function startFlush() {
+  if (logTimer) return;
+  paintLog(logQueue.shift());
+  logTimer = setInterval(flushTick, LOG_SPEED);
+}
+function afterLogs(fn) {
+  if (!logQueue.length && !logTimer) fn();
+  else onDrain = fn;
+}
+
+const LOG_STYLE = {
+  info: 'text-slate-300 border-slate-600',
+  good: 'text-emerald-300 border-emerald-500',
+  bad: 'text-rose-300 border-rose-500',
+  warn: 'text-amber-300 border-amber-500',
+  tech: 'text-sky-300 border-sky-500',
+  turn: 'text-white border-violet-400 bg-violet-500/10'
+};
+function log(msg, type = 'info', record = false) {
+  if (record) S.history.push({ turn: S.turn, msg, type });
+  logQueue.push({ msg, type, turn: S.turn });
+  startFlush();
+}
+function paintLog(it) {
+  if (!it) return;
+  const box = $('log');
+  const d = document.createElement('div');
+  d.className = 'logline border-l-4 pl-2 py-0.5 rounded-r ' + (LOG_STYLE[it.type] || LOG_STYLE.info);
+  d.innerHTML = '<span class="text-slate-500 text-[11px] mr-1">[' + it.turn + '턴]</span>' + it.msg;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  S.logCnt++;
+  $('logCount').textContent = S.logCnt + '건';
+}
+
+/* ---------- 말풍선 ---------- */
+const BUBBLE_TONE = {
+  good: 'bg-emerald-100 text-emerald-900 border-emerald-400',
+  bad: 'bg-rose-100 text-rose-900 border-rose-400',
+  warn: 'bg-amber-100 text-amber-900 border-amber-400',
+  info: 'bg-white text-slate-800 border-slate-300'
+};
+function bubble(text, tone = 'info', delay = 0) {
+  setTimeout(() => {
+    const layer = $('bubbleLayer');
+    if (!layer) return;
+    $('hudQuote').textContent = text;              // 하단 HUD에도 표시
+    const b = document.createElement('div');
+    b.className = 'bubble absolute px-2.5 py-1.5 rounded-2xl text-[12px] sm:text-[13px] whitespace-nowrap border-2 shadow-xl ' + (BUBBLE_TONE[tone] || BUBBLE_TONE.info);
+    b.textContent = text;
+    layer.appendChild(b);
+    let x = layer.clientWidth / 2, y = layer.clientHeight / 2;
+    if (citizens.length) {
+      const k = citizens[Math.floor(Math.random() * citizens.length)].el;
+      const r = k.getBoundingClientRect(), lr = layer.getBoundingClientRect();
+      x = r.left - lr.left + r.width / 2;
+      y = r.top - lr.top - 26;
+    }
+    const w = b.offsetWidth;
+    b.style.left = clamp(x - w / 2, 6, Math.max(6, layer.clientWidth - w - 6)) + 'px';
+    b.style.top = Math.max(4, y) + 'px';
+    setTimeout(() => b.remove(), 4300);
+  }, delay);
+}
+
+/* ---------- 플로팅 수치 ---------- */
+function floatText(text, cls = 'text-emerald-300', delay = 0) {
+  setTimeout(() => {
+    const layer = $('floatLayer');
+    const d = document.createElement('div');
+    d.className = 'floater absolute text-2xl sm:text-3xl drop-shadow-lg ' + cls;
+    d.textContent = text;
+    d.style.left = (30 + Math.random() * 40) + '%';
+    d.style.top = (35 + Math.random() * 20) + '%';
+    layer.appendChild(d);
+    setTimeout(() => d.remove(), 1600);
+  }, delay);
+}
+
+/* ---------- 렌더링 ---------- */
+function render() {
+  $('s-turn').textContent = S.turn;
+  $('s-maxturn').textContent = MAX_TURN;      // 턴 수를 바꿔도 화면이 따라옵니다
+  $('s-pop').textContent = S.pop;
+  $('s-food').textContent = Math.floor(S.food);
+  $('s-foodmax').textContent = foodCap();
+  $('s-know').textContent = S.know;
+  $('s-poll').textContent = Math.floor(S.poll);
+
+  $('foodBar').style.width = clamp(S.food / foodCap() * 100, 0, 100) + '%';
+  $('foodBar').className = 'h-full rounded-full transition-all duration-500 ' +
+    (S.food < S.pop ? 'bg-rose-500' : S.food < S.pop * 2 ? 'bg-amber-400' : 'bg-emerald-400');
+
+  $('pollBar').style.width = clamp(S.poll, 0, 100) + '%';
+  $('pollBar').className = 'h-full rounded-full transition-all duration-500 ' +
+    (S.poll >= 70 ? 'bg-rose-500' : S.poll >= 50 ? 'bg-amber-400' : 'bg-violet-400');
+  $('pollIcon').style.filter = S.poll >= 70 ? 'hue-rotate(-60deg) saturate(1.6)' : S.poll >= 50 ? 'hue-rotate(-30deg) saturate(1.3)' : 'none';
+  $('smogLayer').style.opacity = clamp(S.poll / 130, 0, 0.72);
+
+  $('s-kgain').textContent = '(턴당 +' + knowGain() + ')';
+
+  const era = ERAS[techCount()];
+  $('eraName').textContent = era.name;
+
+  const cb = $('colonyBadge');
+  if (S.war) {
+    const w = { win: ['🚩 전쟁 승리', 'border-emerald-500 bg-emerald-900/50 text-emerald-200'],
+                lose: ['💥 전쟁 패배', 'border-rose-500 bg-rose-900/60 text-rose-200'],
+                tribute: ['🤝 조공으로 회피', 'border-amber-500 bg-amber-900/50 text-amber-200'] }[S.war.result];
+    cb.textContent = w[0];
+    cb.className = 'text-[11px] px-2 py-1 rounded-lg border ' + w[1];
+  } else {
+    cb.className = 'hidden';
+  }
+
+  $('techBadges').innerHTML = TECHS.map(t =>
+    '<span class="' + (S.techs[t.id] ? 'drop-shadow' : 'opacity-25 grayscale') + '" title="' + t.name + '">' +
+    svgIcon(t.sp, 22) + '</span>').join('');
+
+  renderMap();
+  renderTechs();
+  renderForecast();
+  $('powerNum').textContent = myPower();
+
+  // 시민 분위기 배지
+  const mood = S.pop <= 0 ? ['소멸', 'text-rose-400']
+    : S.food < S.pop ? ['굶주림', 'text-rose-400']
+    : S.protest ? ['환경 시위', 'text-amber-300']
+    : S.superstition > 0 ? ['미신 창궐', 'text-violet-300']
+    : S.poll >= 50 ? ['매연 고통', 'text-amber-300']
+    : ['평온', 'text-emerald-300'];
+  const mb = $('hudMood');
+  mb.textContent = mood[0];
+  mb.className = 'shrink-0 text-[11px] px-2 py-1 rounded-lg border border-line bg-panel2 ' + mood[1];
+  $('hudFace').innerHTML = citIcon(citizenFace()[0], 26);
+
+  const gain = foodProd() - S.pop;
+  $('hintLine').innerHTML =
+    '다음 턴 예상 🍎<span class="' + (gain < 0 ? 'text-rose-400' : 'text-emerald-400') + '">' +
+    (gain >= 0 ? '+' : '') + gain + '</span> · 💡<span class="text-amber-300">+' + knowGain() + '</span>' +
+    (has('steam') && !S.protest ? ' · 🌫️<span class="text-violet-300">+' + BAL.POLL_PER_TURN + '%</span>' : '') +
+    (S.ap > 0 ? ' · <span class="text-sky-300">남은 ⚡' + S.ap + '개 → 💡+' + (S.ap * 2) + '</span>' : '');
+
+  renderActions();
+  $('nextTurnBtn').disabled = S.over || S.busy;
+  $('nextTurnBtn').textContent = S.turn >= MAX_TURN ? '🏁 마지막 턴 종료!' : '⏭️ 턴 종료 (Next Turn)';
+  $('techCount').textContent = techCount() + ' / 5 해금';
+}
+
+/* 기술의 특수 조건 — 잠겨 있으면 이유를 문자열로 돌려줍니다 (없으면 null) */
+function techLock(t) {
+  if (t.gate === 'poll40' && S.poll > 40)
+    return '오염도 40% 이하 필요 <b>(현재 ' + Math.floor(S.poll) + '%)</b> → 🌱 환경 정화를 하면 열립니다';
+  return null;
+}
+
+function renderTechs() {
+  const grid = $('techGrid');
+  grid.innerHTML = TECHS.map(t => {
+    const done = S.techs[t.id];
+    const lock = techLock(t);                       // 🔒 특수 조건(오염도 등)
+    const afford = !lock && S.know >= t.cost.k && S.food >= t.cost.f && S.ap > 0;
+    const border = done ? 'border-emerald-500 bg-emerald-900/25' : afford ? 'border-amber-500/70 bg-panel2' : 'border-line bg-panel2/60 opacity-70';
+    // 태블릿 한 화면에 들어가도록 세로형 압축 카드 (자세한 설명은 길게 눌러 확인)
+    const tip = t.effect + (t.side ? ' / ⚠️ ' + t.side : '') + (lock ? ' / 🔒 ' + lock.replace(/<[^>]*>/g, '') : '');
+    return '' +
+      '<div class="rounded-xl border-2 p-1 flex flex-col items-center text-center gap-0.5 ' + border + '" title="' + tip + '">' +
+        '<span class="rounded-lg p-0.5 ' + (done ? 'bg-emerald-500/15' : 'bg-black/25') + '">' +
+          (pic(IMG.tech[t.id])
+            ? '<img src="' + pic(IMG.tech[t.id]) + '" width="30" height="30" class="rounded object-contain" alt="">'
+            : svgIcon(t.sp, 26)) + '</span>' +
+        '<div class="text-[11px] text-white leading-tight w-full truncate">' + t.name + '</div>' +
+        '<div class="flex items-center justify-center gap-1 text-[11px]">' +
+          '<span class="' + (S.know >= t.cost.k ? 'text-know' : 'text-rose-400') + '">💡' + t.cost.k + '</span>' +
+          (t.cost.f ? '<span class="' + (S.food >= t.cost.f ? 'text-food' : 'text-rose-400') + '">🍎' + t.cost.f + '</span>' : '') +
+        '</div>' +
+        (!done && lock ? '<div class="text-[10px] text-rose-200 bg-rose-900/50 rounded px-1 py-0.5 leading-tight w-full">🔒 오염 40%↓</div>' : '') +
+        (done
+          ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500 text-slate-900 mt-auto">✔ ' + (S.techTurn[t.id] || '-') + '턴</span>'
+          : '<button data-tech="' + t.id + '" ' + (afford && !S.over ? '' : 'disabled') +
+            ' class="research-btn mt-auto w-full rounded-lg px-1 py-1 text-[12px] border-b-2 transition active:scale-95 ' +
+            (afford && !S.over ? 'bg-amber-400 border-amber-600 text-slate-900' : 'bg-slate-700 border-slate-800 text-slate-400 cursor-not-allowed') +
+            '">🔬 연구</button>') +
+      '</div>';
+  }).join('');
+  grid.querySelectorAll('.research-btn').forEach(b =>
+    b.addEventListener('click', () => openQuiz(b.dataset.tech)));
+}
+
+/* ---------- 화면 흔들림 ---------- */
+function shake() {
+  const el = document.body;
+  el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+  setTimeout(() => el.classList.remove('shake'), 500);
+}
+
+/* =========================================================
+   기술 연구 & 퀴즈 모달
+   ========================================================= */
+function openQuiz(id) {
+  const t = TECH[id];
+  if (!t || S.over || S.techs[id]) return;
+  if (S.know < t.cost.k || S.food < t.cost.f || S.ap <= 0 || techLock(t)) return;
+  S.quizId = id;
+  sfx('click');
+  $('quizIcon').innerHTML = pic(IMG.tech[t.id])
+    ? '<img src="' + pic(IMG.tech[t.id]) + '" width="44" height="44" class="rounded object-contain" alt="">'
+    : svgIcon(t.sp, 44);
+  $('quizTech').textContent = t.name + ' 개발';
+  $('quizQ').innerHTML = '<span class="text-amber-300">Q.</span> ' + t.q;
+  $('quizMsg').textContent = '';
+  $('quizMsg').className = 'mt-3 text-sm min-h-[24px] text-center';
+  const box = $('quizOpts');
+  box.innerHTML = t.opts.map((o, i) =>
+    '<button data-i="' + i + '" class="quiz-opt rounded-xl border-2 border-line bg-panel px-3 py-3 text-[15px] hover:border-amber-400 hover:bg-panel2 active:scale-95 transition">' +
+    '<span class="text-amber-300 mr-1">' + '①②③④'[i] + '</span>' + o + '</button>').join('');
+  box.querySelectorAll('.quiz-opt').forEach(b =>
+    b.addEventListener('click', () => answerQuiz(parseInt(b.dataset.i, 10), b)));
+  $('quizModal').classList.remove('hidden');
+  $('quizModal').classList.add('flex');
+}
+
+function closeQuiz() {
+  $('quizModal').classList.add('hidden');
+  $('quizModal').classList.remove('flex');
+  S.quizId = null;
+}
+
+function answerQuiz(i, btn) {
+  const t = TECH[S.quizId];
+  if (!t) return;
+  if (i !== t.ans) {
+    sfx('bad');
+    btn.className = 'quiz-opt rounded-xl border-2 border-rose-500 bg-rose-900/40 px-3 py-3 text-[15px] transition shake';
+    $('quizMsg').innerHTML = '❌ 다시 생각해 보세요! 교과서 속 핵심 원리를 떠올려 볼까요?';
+    $('quizMsg').className = 'mt-3 text-sm min-h-[24px] text-center text-rose-300';
+    return;
+  }
+  // 정답 → 해금
+  sfx('good');
+  btn.className = 'quiz-opt rounded-xl border-2 border-emerald-400 bg-emerald-800/50 px-3 py-3 text-[15px] transition';
+  $('quizMsg').innerHTML = '⭕ 정답! <span class="text-slate-300">' + t.why + '</span>';
+  $('quizMsg').className = 'mt-3 text-sm min-h-[24px] text-center text-emerald-300 leading-snug';
+  $('quizOpts').querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
+
+  S.know -= t.cost.k;
+  S.food -= t.cost.f;
+  S.ap = Math.max(0, S.ap - 1);
+  S.techs[t.id] = true;
+  S.techTurn[t.id] = S.turn;
+  if (t.id === 'steam') S.protest = false;
+  log('🔬 <b>' + t.name + '</b> 개발 성공! (💡-' + t.cost.k + (t.cost.f ? ' 🍎-' + t.cost.f : '') + ') → ' + t.effect, 'tech', true);
+  showBanner('🔬 ' + t.name + ' 개발 완료! — ' + t.sub);
+  bubble('드디어 ' + t.name + '이(가) 완성됐어!', 'good', 200);
+  floatText(t.icon, 'text-white', 100);
+  try { confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 }, disableForReducedMotion: true }); } catch (e) {}
+  if (techCount() === 5) {
+    log('🌟 5대 핵심 과학기술을 모두 확보했습니다! 지속 가능한 스마트 문명이 눈앞입니다.', 'good', true);
+  }
+  render();
+  setTimeout(() => {
+    closeQuiz();
+    askDilemma(t.id, () => { render(); });   // ⚖️ 이 기술을 어떻게 쓸까?
+  }, 1500);
+}
+
+/* =========================================================
+   ⚖️ 과학기술의 양면성 — 해금 직후 선택
+   같은 기술도 어떻게 쓰느냐에 따라 결과가 달라집니다.
+   ========================================================= */
+const DILEMMA = {
+  print: {
+    q: '인쇄기를 무엇에 먼저 쓸까요?',
+    a: { label: '📚 과학 서적을 찍는다', eff: '턴당 💡+5', why: '지식이 널리 퍼지며 과학 혁명의 토대가 되었습니다.' },
+    b: { label: '📰 소식지를 찍는다', eff: '즉시 👥+5', why: '인쇄술은 지식뿐 아니라 여론과 선전의 도구이기도 했습니다.' }
+  },
+  fert: {
+    q: '비료를 얼마나 뿌릴까요?',
+    a: { label: '🌱 적정량만 사용한다', eff: '변화 없음', why: '땅과 물을 지켰습니다. 지속 가능한 농업의 기본입니다.' },
+    b: { label: '🧪 최대한 많이 뿌린다', eff: '턴당 🍎+15 · 🌫️+3', why: '비료가 강으로 흘러들면 녹조가 생깁니다. 이것이 부영양화입니다.' }
+  },
+  steam: {
+    q: '공장을 어디에 세울까요?',
+    a: { label: '🏙️ 도시 한가운데', eff: '턴당 💡+10 · 🌫️+2', why: '기술자들이 모여 혁신은 빨라졌지만, 매연이 도시를 덮었습니다.' },
+    b: { label: '🏞️ 도시 밖 강가', eff: '턴당 🍎+10', why: '도시 공기는 지켰지만, 물과 땅으로 오염이 옮겨갈 수 있습니다.' }
+  },
+  peni: {
+    q: '항생제를 가축에게도 쓸까요?',
+    a: { label: '🧑‍⚕️ 사람에게만 쓴다', eff: '변화 없음', why: '항생제를 아껴 쓰면 내성균이 잘 생기지 않습니다.' },
+    b: { label: '🐄 가축에게도 쓴다', eff: '턴당 🍎+12 · 내성균 위험', why: '항생제를 남용하면 살아남은 세균이 내성을 얻습니다. 그러면 약이 듣지 않습니다.' }
+  },
+  ict: {
+    q: '시민들의 정보를 모아 분석할까요?',
+    a: { label: '🔒 모으지 않는다', eff: '변화 없음', why: '사생활을 지켰습니다. 정보화 사회의 중요한 원칙입니다.' },
+    b: { label: '📊 모두 모아 분석한다', eff: '턴당 💡+25 · 인구 증가 둔화', why: '데이터는 큰 힘이지만, 감시받는다고 느낀 시민들이 떠나기도 합니다.' }
+  }
+};
+
+function askDilemma(techId, after) {
+  const D = DILEMMA[techId];
+  if (!D) { after(); return; }
+  const pick = (k) => {
+    S.choices[techId] = k;
+    const c = D[k];
+    if (techId === 'print' && k === 'b') { S.pop += 5; floatText('+5👥', 'text-sky-300'); }
+    log('⚖️ [' + TECH[techId].name + '] ' + c.label + ' → ' + c.eff, 'tech', true);
+    showEvent('💡', '이런 결과가 생깁니다', '<b>' + c.label + '</b><br><span class="text-slate-300">' + c.why + '</span>',
+      [{ label: '알겠습니다', onClick: after }]);
+  };
+  showEvent('⚖️', TECH[techId].name + ' — 어떻게 쓸까요?',
+    D.q + '<br><span class="text-[12px] text-amber-200">같은 기술도 쓰기에 따라 결과가 달라집니다.</span>',
+    [
+      { label: D.a.label + ' <span class="text-[11px]">(' + D.a.eff + ')</span>', cls: 'bg-emerald-400 border-emerald-600 text-slate-900', onClick: () => pick('a') },
+      { label: D.b.label + ' <span class="text-[11px]">(' + D.b.eff + ')</span>', cls: 'bg-amber-400 border-amber-600 text-slate-900', onClick: () => pick('b') }
+    ]);
+}
+const chose = (t, k) => S.choices[t] === k;
+
+/* =========================================================
+   환경 정화
+   ========================================================= */
+function purify() {
+  if (S.over || S.know < 30 || S.poll <= 0) return;
+  S.know -= 30;
+  const before = S.poll;
+  S.poll = Math.max(0, S.poll - 25);
+  S.protest = false;
+  sfx('good');
+  log('🌱 환경 정화 사업 시행! 오염도 ' + Math.floor(before) + '% → ' + Math.floor(S.poll) + '% (💡-30)', 'good', true);
+  bubble('공기가 맑아졌어! 🌫️ ' + Math.floor(before) + '% → ' + Math.floor(S.poll) + '%', 'good', 100);
+  floatText('🌫️-' + (Math.floor(before) - Math.floor(S.poll)), 'text-emerald-300');
+  S.purified++;
+  render();
+}
+
+/* =========================================================
+   이벤트 모달
+   ========================================================= */
+function showEvent(icon, title, body, buttons) {
+  showBanner(icon + ' ' + title);
+  $('evIcon').textContent = icon;
+  $('evTitle').textContent = title;
+  $('evBody').innerHTML = body;
+  const box = $('evBtns');
+  box.innerHTML = '';
+  buttons.forEach(b => {
+    const el = document.createElement('button');
+    el.className = 'w-full rounded-xl border-b-4 py-3 text-base active:scale-[.98] transition ' +
+      (b.disabled ? 'bg-slate-700 border-slate-800 text-slate-400 cursor-not-allowed' : (b.cls || 'bg-amber-400 border-amber-600 text-slate-900'));
+    el.innerHTML = b.label;
+    el.disabled = !!b.disabled;
+    el.addEventListener('click', () => {
+      $('eventModal').classList.add('hidden');
+      $('eventModal').classList.remove('flex');
+      sfx('click');
+      if (b.onClick) b.onClick();
+    });
+    box.appendChild(el);
+  });
+  $('eventModal').classList.remove('hidden');
+  $('eventModal').classList.add('flex');
+}
+
+/* =========================================================
+   시민 자율 반응 시스템
+   ========================================================= */
+function citizenReactions(shortage) {
+  let d = 300;
+
+  // ① 식량 부족 → 농민 폭동
+  if (shortage) {
+    bubble('밥도 없는데 연구는 무슨!', 'bad', d); d += 900;
+    const lost = Math.min(S.know, 20);
+    S.know -= lost;
+    log('🔥 [농민 폭동] 성난 시민들이 연구소로 몰려갔습니다. 지식 -' + lost, 'bad', true);
+    shake();
+  }
+
+  // ② 미신 창궐 → 전염병을 항생제 없이 맞았을 때 발동 (아래 전염병 위기에서 예약)
+  if (S.pendingSuperstition) {
+    S.pendingSuperstition = false;
+    bubble('악마의 저주다!', 'bad', d); d += 900;
+    S.superstition = 2;
+    log('🔮 [미신 창궐] 원인을 모르는 병 앞에 사람들이 미신에 빠졌습니다. 2턴간 지식 생산 중단!', 'bad', true);
+  }
+
+  // ③ 인쇄술 보유 → 도서관 설립
+  if (has('print') && S.superstition === 0 && S.pop > 0) {
+    bubble('우리끼리 스터디 모임을 만들자!', 'good', d); d += 900;
+    S.know += 15;
+    log('📚 [도서관 설립] 시민들이 스스로 책을 읽고 토론합니다. 지식 +15', 'good');
+  }
+
+  // ④ 오염도 50% 초과 → 환경 시위
+  if (S.poll > 50 && !S.protest) {
+    S.protest = true;
+    bubble('기침 때문에 못 살겠다!', 'warn', d); d += 900;
+    log('🪧 [환경 시위] 시민들이 공장 가동을 막았습니다! 증기기관 효과 일시 중단 (환경 정화로 해결 가능)', 'bad', true);
+  } else if (S.poll <= 50 && S.protest) {
+    S.protest = false;
+    bubble('공기가 좋아졌으니 다시 일하자!', 'good', d); d += 900;
+    log('🕊️ 환경 시위가 해산되고 증기기관이 다시 가동됩니다.', 'good');
+  } else if (S.protest) {
+    bubble('공장 문 닫을 때까지 못 참아!', 'warn', d); d += 900;
+  }
+
+  // ⑤ 평화로운 일상 (특별한 일이 없을 때)
+  if (!shortage && !S.protest && S.superstition === 0 && S.food >= 20 && S.pop > 0) {
+    const peace = ['오늘도 풍년이야!', '아이들이 늘고 있어!', '학교를 더 지어 주세요!', '우리 문명 최고!', '다음엔 어떤 기술을 만들까?'];
+    bubble(peace[Math.floor(Math.random() * peace.length)], 'info', d + 400);
+  }
+}
+
+/* =========================================================
+   역사적 위기 트리거
+   ========================================================= */
+/* =========================================================
+   위기·전쟁 무작위 배치 (매 판 순서가 달라짐)
+   전반부(3~6턴) 2건 · 후반부(7~11턴) 4건
+   ========================================================= */
+const CRISIS_META = {
+  famine:    { icon: '🌾', name: '식량 대기근', counter: 'fert',  tip: '질소 비료가 없으면 인구 30% 아사' },
+  plague:    { icon: '☠️', name: '전염병 창궐', counter: 'peni',  tip: '페니실린이 없으면 인구 절반 사망' },
+  logistics: { icon: '🚚', name: '물류 마비',   counter: 'steam', tip: '증기기관이 없으면 식량 50% 부패' },
+  smog:      { icon: '🏭', name: '스모그 위기', counter: null,    tip: '오염도가 높으면 큰 피해' },
+  war:       { icon: '⚔️', name: '이민족의 침입', counter: null, tip: '국력 = 인구 + (보유 기술 × 15)' }
+};
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pickN = (arr, n) => shuffle(arr.slice()).slice(0, n);
+
+function makeSchedule() {
+  // 12턴 동안 위기 4종 + 전쟁 1회가 무작위 순서로 찾아옵니다
+  const early = shuffle(['famine', 'logistics']);      // 전반부에 올 수 있는 위기
+  const late  = shuffle(['plague', 'smog']);           // 후반부 위기
+  const earlyTurns = pickN([3, 4, 5], 2).sort((a, b) => a - b);
+  const lateTurns  = pickN([7, 9, 10, 11], 2).sort((a, b) => a - b);
+  const warTurn    = pickN([6, 8].filter(t => !lateTurns.includes(t)), 1)[0] || 8;
+
+  const sc = {};
+  earlyTurns.forEach((t, i) => sc[t] = early[i]);
+  lateTurns.forEach((t, i) => sc[t] = late[i]);
+  sc[warTurn] = 'war';                                 // 전쟁은 게임에 딱 한 번
+  return sc;
+}
+
+/* 다가오는 위기 예고 — 아는 만큼 미리 보입니다 (과학 = 예측)
+   기본: 존재만 / 인쇄술: 이름까지 / 정보통신: 대비책까지                */
+function upcomingCrisis() {
+  for (let t = S.turn + 1; t <= Math.min(MAX_TURN, S.turn + 2); t++) {
+    if (S.schedule[t]) return { turn: t, id: S.schedule[t], inTurns: t - S.turn };
+  }
+  return null;
+}
+function renderForecast() {
+  const box = $('forecast'), u = upcomingCrisis();
+  if (!u || S.over) {
+    box.className = 'hidden';
+    return;
+  }
+  const M = CRISIS_META[u.id];
+  if (!M) { box.className = 'hidden'; return; }   // 알 수 없는 사건은 표시하지 않음
+  const know = has('ict') ? 2 : has('print') ? 1 : 0;
+  const ready = M.counter && has(M.counter);
+  box.className = 'mt-2 rounded-xl border-2 px-3 py-2 flex items-center gap-2 text-[13px] ' +
+    (ready ? 'border-emerald-600 bg-emerald-900/25' : 'border-amber-600/70 bg-amber-900/20');
+  box.innerHTML =
+    '<span class="text-xl">' + (know >= 1 ? M.icon : '❔') + '</span>' +
+    '<span class="text-slate-200">' +
+      (know === 0
+        ? '<b class="text-amber-200">' + u.inTurns + '턴 뒤</b> 무언가 다가오고 있습니다… <span class="text-slate-400">(활판 인쇄술을 개발하면 정체를 알 수 있습니다)</span>'
+        : know === 1
+          ? '<b class="text-amber-200">' + u.turn + '턴</b> · <b>' + M.name + '</b> 발생 예정 <span class="text-slate-400">(정보통신 기술을 개발하면 대비책까지 보입니다)</span>'
+          : '<b class="text-amber-200">' + u.turn + '턴</b> · <b>' + M.name + '</b> — ' + M.tip +
+            (M.counter ? (ready ? ' <b class="text-emerald-300">✔ 대비 완료</b>' : ' <b class="text-rose-300">✘ 미대비</b>') : '')) +
+    '</span>';
+}
+
+function triggerCrisis(t) {
+  // 위기 처리가 끝나면 '시대의 사건' 카드 3장을 뽑습니다
+  const done = () => endCrisis();
+  const ev = S.schedule[t];
+  if (!ev) { done(); return; }
+
+  if (ev === 'war') { warModal(t); return; }
+
+  if (ev === 'famine') {
+    if (has('fert')) {
+      S.pop += 10;
+      log('🌾 [' + t + '턴 식량 대기근] 질소 비료 덕분에 대풍작! 이웃 부족이 합류해 인구 +10명', 'good', true);
+      try { confetti({ particleCount: 60, spread: 60, origin: { y: .6 } }); } catch (e) {}
+      showEvent('🌾', t + '턴 · 식량 대기근', '전국에 흉년이 들었지만 <b class="text-emerald-300">질소 비료</b>로 만든 비축 식량이 있었습니다!<br>굶주린 이웃 부족까지 받아들여 <b class="text-emerald-300">인구 +10명</b> 증가!', [{ label: '👏 축하합니다!', onClick: done }]);
+    } else {
+      const dead = Math.floor(S.pop * 0.3);
+      S.pop -= dead;
+      log('💀 [' + t + '턴 식량 대기근] 비료 기술이 없어 인구의 30%(' + dead + '명)가 굶어 죽었습니다.', 'bad', true);
+      shake(); sfx('bad');
+      showEvent('💀', t + '턴 · 식량 대기근', '오랜 가뭄으로 밭이 말라붙었습니다.<br><b class="text-rose-300">질소 비료</b>가 없어 인구의 30%인 <b class="text-rose-300">' + dead + '명</b>이 아사했습니다.', [{ label: '😢 견뎌낸다', cls: 'bg-rose-400 border-rose-600 text-slate-900', onClick: done }]);
+    }
+    return;
+  }
+
+  if (ev === 'plague') {
+    if (has('peni') && chose('peni', 'b')) {
+      // ⚖️ 항생제 남용 → 내성균 등장으로 면역이 깨짐
+      const dead = Math.floor(S.pop * 0.25);
+      S.pop -= dead;
+      log('🦠 [' + t + '턴 전염병 창궐] 항생제 내성균 등장! 약이 잘 듣지 않아 인구 ' + dead + '명이 사망했습니다.', 'bad', true);
+      shake(); sfx('bad');
+      showEvent('🦠', t + '턴 · 전염병 창궐 (내성균)',
+        '가축에까지 항생제를 쓴 탓에 <b class="text-rose-300">내성균</b>이 생겼습니다.<br>페니실린이 잘 듣지 않아 <b class="text-rose-300">' + dead + '명</b>이 목숨을 잃었습니다.<br>' +
+        '<span class="text-[12px] text-amber-200">🤔 항생제를 아껴 썼다면 어땠을까요?</span>',
+        [{ label: '😷 교훈을 얻는다', cls: 'bg-rose-400 border-rose-600 text-slate-900', onClick: done }]);
+      return;
+    }
+    if (has('peni')) {
+      log('💊 [' + t + '턴 전염병 창궐] 페니실린으로 환자 전원 완치! 피해 없음', 'good', true);
+      showEvent('💊', t + '턴 · 전염병 창궐', '무서운 세균성 전염병이 퍼졌지만 <b class="text-emerald-300">페니실린</b>이 환자를 모두 살려냈습니다.<br><b class="text-emerald-300">인구 피해 0명!</b>', [{ label: '🙌 과학의 힘!', onClick: done }]);
+    } else {
+      const dead = Math.floor(S.pop / 2);
+      S.pop -= dead;
+      S.pendingSuperstition = true;   // 원인을 모르니 미신이 퍼짐 (이번 턴 끝에 발동)
+      log('☠️ [' + t + '턴 전염병 창궐] 항생제가 없어 인구 절반(' + dead + '명)이 사망했습니다.', 'bad', true);
+      shake(); sfx('bad');
+      showEvent('☠️', t + '턴 · 전염병 창궐', '세균성 전염병이 마을을 덮쳤습니다.<br><b class="text-rose-300">항생제</b>가 없어 인구의 절반인 <b class="text-rose-300">' + dead + '명</b>이 목숨을 잃었습니다.', [{ label: '😷 버텨낸다', cls: 'bg-rose-400 border-rose-600 text-slate-900', onClick: done }]);
+    }
+    return;
+  }
+
+  if (ev === 'logistics') {
+    if (has('steam')) {
+      S.know += 50;
+      log('🚂 [' + t + '턴 물류 마비] 증기 기관차가 전국에 물자를 실어 날랐습니다! 지식 +50', 'good', true);
+      showEvent('🚂', t + '턴 · 물류 마비', '길이 끊겼지만 <b class="text-emerald-300">증기기관</b> 열차가 물자와 기술자를 실어 날랐습니다.<br>교류가 늘어 <b class="text-emerald-300">지식 +50</b>!', [{ label: '🚄 달려라 문명!', onClick: done }]);
+    } else {
+      const lost = Math.floor(S.food * 0.5);
+      S.food -= lost;
+      log('🚚 [' + t + '턴 물류 마비] 수송 수단이 없어 보관 식량 50%(' + lost + ')가 부패했습니다.', 'bad', true);
+      shake(); sfx('bad');
+      showEvent('🚚', t + '턴 · 물류 마비', '식량을 옮길 방법이 없어 창고에서 썩어갔습니다.<br><b class="text-rose-300">보관 식량의 50%(' + lost + ')</b>가 사라졌습니다.', [{ label: '😖 어쩔 수 없다', cls: 'bg-rose-400 border-rose-600 text-slate-900', onClick: done }]);
+    }
+    return;
+  }
+
+  if (ev === 'smog') {
+    if (S.poll >= 50) {
+      const can = S.know >= 30;
+      log('🏭 [' + t + '턴 스모그 위기] 도시가 매연으로 뒤덮였습니다! 대책이 필요합니다.', 'warn', true);
+      showEvent('🏭', t + '턴 · 스모그 위기',
+        '공장 매연으로 하늘이 잿빛이 되었습니다. (현재 오염도 <b class="text-rose-300">' + Math.floor(S.poll) + '%</b>)<br>초대형 공기청정 필터를 설치할까요?',
+        [
+          {
+            label: '🌬️ 공기청정 필터 설치 (💡30 소모 → 오염도 -30%)' + (can ? '' : ' <span class="text-[11px]">지식 부족</span>'),
+            disabled: !can,
+            cls: 'bg-emerald-400 border-emerald-600 text-slate-900',
+            onClick: () => {
+              S.know -= 30;
+              S.poll = Math.max(0, S.poll - 30);
+              S.protest = false;
+              log('🌬️ 초대형 공기청정 필터 가동! 오염도 -30% (현재 ' + Math.floor(S.poll) + '%)', 'good', true);
+              bubble('숨쉬기가 편해졌어!', 'good', 200);
+              done();
+            }
+          },
+          {
+            label: '😤 그냥 버틴다 (인구 -20%, 오염도 +10%)',
+            cls: 'bg-rose-400 border-rose-600 text-slate-900',
+            onClick: () => {
+              const dead = Math.floor(S.pop * 0.2);
+              S.pop -= dead;
+              S.poll = clamp(S.poll + 10, 0, 100);
+              log('😷 스모그 방치! 호흡기 질환으로 인구 -' + dead + '명, 오염도 +10%', 'bad', true);
+              shake(); sfx('bad');
+              done();
+            }
+          }
+        ]);
+    } else {
+      log('🍃 [' + t + '턴] 오염도가 낮아 스모그 위기를 무사히 넘겼습니다!', 'good', true);
+      showEvent('🍃', t + '턴 · 맑은 하늘', '다른 문명들이 스모그로 고통받는 동안,<br>우리 문명은 <b class="text-emerald-300">오염도 ' + Math.floor(S.poll) + '%</b>의 깨끗한 하늘을 지켜냈습니다!', [{ label: '🌳 지속 가능한 문명!', onClick: done }]);
+    }
+    return;
+  }
+
+  done();
+}
+
+/* =========================================================
+   턴 종료 처리
+   ========================================================= */
+function endTurn() {
+  if (S.over || S.busy) return;
+  S.buildMode = false;
+  S.busy = true;
+  sfx('turn');
+  log('━━━━━ ' + S.turn + '턴 결산 ━━━━━', 'turn');
+
+  /* 1) 지식 획득 */
+  if (S.superstition > 0) {
+    S.superstition--;
+    log('🔮 미신에 빠진 시민들… 이번 턴 지식 생산 중단 (남은 턴: ' + S.superstition + ')', 'bad');
+  } else {
+    const kg = knowGain();
+    S.know += kg;
+    let detail = '인구 ' + S.pop + (has('print') ? ' ×2(인쇄술)' : '') + (has('steam') && !S.protest ? ' +10(증기)' : '') + (has('ict') ? ' +50(정보통신)' : '');
+    log('💡 지식 +' + kg + ' <span class="text-slate-500">(' + detail + ')</span>', 'info');
+    if (kg > 0) floatText('+' + kg + '💡', 'text-amber-300', 150);
+  }
+
+  /* 2) 식량 생산·소비 */
+  const prod = foodProd(), cons = S.pop;
+  S.food += prod - cons;
+  log('🍎 식량 +' + prod + ' 생산 / -' + cons + ' 소비 <span class="text-slate-500">(인구 ' + S.pop + '명)</span>', 'info');
+
+  /* 3) 아사 판정 */
+  let shortage = false;
+  if (S.food < 0) {
+    const dead = Math.min(S.pop, Math.ceil(-S.food));
+    S.pop -= dead; S.food = 0; shortage = true;
+    log('💀 식량 부족! 굶주림으로 인구 ' + dead + '명이 사망했습니다.', 'bad', true);
+    floatText('-' + dead + '👥', 'text-rose-400', 350);
+    sfx('bad'); shake();
+  }
+
+  /* 4) 창고 한도 (부패) */
+  const cap = foodCap();
+  if (S.food > cap) {
+    const waste = Math.floor(S.food - cap);
+    S.food = cap;
+    log('🗑️ 창고 한도(' + cap + ') 초과! 식량 ' + waste + '이(가) 부패해 버려졌습니다.', 'warn');
+  }
+
+  /* 5) 자연 사망 (페니실린 미보유) */
+  if (!has('peni') && S.pop > 0) {
+    const nd = Math.floor(S.pop * 0.05);
+    if (nd > 0) { S.pop -= nd; log('⚰️ 의료 기술 부재로 자연 사망 -' + nd + '명', 'bad'); }
+  }
+
+  /* 6) 인구 증가 */
+  if (S.food >= 20 && S.pop > 0) {
+    const grow = chose('ict', 'b') ? 2 : 3;      // ⚖️ 감시 사회는 인구 증가가 둔화
+    S.pop += grow;
+    log('👶 식량이 넉넉해 인구 +' + grow + '명 증가!' +
+      (grow < 3 ? ' <span class="text-slate-500">(감시에 대한 불신으로 둔화)</span>' : ''), 'good');
+    floatText('+' + grow + '👥', 'text-sky-300', 550);
+  }
+
+  /* 7) 환경 오염 누적 */
+  let pollAdd = has('steam') ? BAL.POLL_PER_TURN : 0;
+  if (chose('fert', 'b')) pollAdd += 3;          // ⚖️ 비료 과다 → 부영양화
+  if (chose('steam', 'a')) pollAdd += 2;         // ⚖️ 도시 안 공장
+  if (pollAdd > 0) {
+    S.poll = clamp(S.poll + pollAdd, 0, 100);
+    log('🌫️ 환경 오염도 +' + pollAdd + '% (현재 ' + Math.floor(S.poll) + '%)', S.poll >= 50 ? 'bad' : 'warn');
+  }
+
+  /* 8) 시민 자율 반응 */
+  citizenReactions(shortage);
+
+  /* 9) 남은 행동력 → 지식 전환 */
+  if (S.ap > 0) {
+    const b = S.ap * 2;
+    S.know += b;
+    log('⚡ 사용하지 않은 행동력 ' + S.ap + '개가 연구 시간으로 쓰여 지식 +' + b, 'info');
+  }
+
+  render();
+
+  /* 10) 패배 판정 */
+  if (checkDefeat()) return;
+
+  /* 11) 다음 턴 / 게임 종료 */
+  if (S.turn >= MAX_TURN) {
+    log('🏁 12턴이 모두 끝났습니다. 문명의 역사를 정리합니다…', 'turn');
+    afterLogs(() => endGame(true));
+    return;
+  }
+  S.turn++;
+  S.ap = AP_PER_TURN;
+  S.used = [];
+  render();
+  afterLogs(() => triggerCrisis(S.turn));
+}
+
+/* =========================================================
+   패배 판정
+   ========================================================= */
+function checkDefeat() {
+  if (S.over) return true;
+  if (S.pop <= 0) {
+    S.pop = 0; render();
+    log('☠️ 인구가 0명이 되어 문명이 소멸했습니다…', 'bad', true);
+    afterLogs(() => endGame(false, '식량이 바닥나 마지막 시민까지 세상을 떠났습니다.'));
+    return true;
+  }
+  if (S.poll >= 100) {
+    render();
+    log('☠️ 환경 오염도가 100%에 도달해 문명이 붕괴했습니다…', 'bad', true);
+    afterLogs(() => endGame(false, '숨 쉴 수 없는 하늘 아래, 문명은 스스로 무너졌습니다.'));
+    return true;
+  }
+  return false;
+}
+
+/* =========================================================
+   게임 종료 & 리포트
+   ========================================================= */
+/* =========================================================
+   📊 문명 점수 — 무엇을 얼마나 남겼는지 항목별로 계산합니다
+   ========================================================= */
+function calcScore(win) {
+  const n = techCount(), built = Object.keys(S.built).length;
+  const warPts = !S.war ? 0 : ({ win: 120, tribute: 40, lose: 0 })[S.war.result];
+  const rows = [
+    { icon: '🧪', label: '해금한 과학기술', detail: n + '개 × 100', pts: n * 100 },
+    { icon: '👥', label: '최종 인구',       detail: S.pop + '명 × 5', pts: S.pop * 5 },
+    { icon: '💡', label: '남은 지식',       detail: S.know + ' ÷ 10 × 3', pts: Math.floor(S.know / 10) * 3 },
+    { icon: '🍎', label: '남은 식량',       detail: Math.floor(S.food) + ' ÷ 10 × 2', pts: Math.floor(S.food / 10) * 2 },
+    { icon: '🏗️', label: '건설한 시설',     detail: built + '곳 × 10', pts: built * 10 },
+    { icon: '🌱', label: '깨끗한 환경',     detail: '(100 − 오염 ' + Math.floor(S.poll) + '%) × 2', pts: Math.max(0, 100 - Math.floor(S.poll)) * 2 },
+    { icon: '⚔️', label: '전쟁',            detail: !S.war ? '없음' : ({ win: '승리', tribute: '조공', lose: '패배' })[S.war.result], pts: warPts }
+  ];
+  const total = rows.reduce((a, r) => a + r.pts, 0);
+  return { total, rows };
+}
+
+function calcGrade(win, score) {
+  if (!win) return { g: '실패', d: '문명이 무너졌습니다. 과학기술은 <b>생존의 조건</b>이었습니다. 다시 도전해 보세요!' };
+  if (score >= 1250) return { g: 'S', d: '완벽합니다! 기술·인구·환경 어느 하나 놓치지 않은 <b>지속 가능한 스마트 문명</b>입니다.' };
+  if (score >= 1000) return { g: 'A', d: '훌륭합니다! 과학기술로 위기를 넘기며 <b>튼튼한 문명</b>을 세웠습니다.' };
+  if (score >= 750)  return { g: 'B', d: '문명은 잘 살아남았습니다. 다만 더 챙길 수 있었던 부분이 남아 있습니다.' };
+  if (score >= 500)  return { g: 'C', d: '겨우 버텨냈습니다. 과학기술 투자가 부족해 위기마다 큰 피해를 입었습니다.' };
+  return { g: 'D', d: '문명이 무너졌습니다. 과학기술은 <b>생존의 조건</b>이었습니다. 다시 도전해 보세요!' };
+}
+
+function endGame(win, reason) {
+  if (S.over) return;
+  S.over = true; S.busy = true;
+  S.buildMode = false;
+  S.food = Math.min(S.food, foodCap());   // 창고를 넘긴 식량은 어차피 부패합니다
+  render();
+  const n = techCount();
+  const sc = calcScore(win);
+  const { g, d } = calcGrade(win, sc.total);
+
+  $('endIcon').textContent = !win ? '💀' : (n === 5 ? '🏆' : '🏛️');
+  $('endTitle').textContent = !win ? '문명 붕괴 (GAME OVER)'
+    : (n === 5 ? '지속 가능한 스마트 문명 달성!' : '12턴 생존 완료');
+  $('endSub').textContent = !win ? (reason || '문명이 무너졌습니다.')
+    : (n === 5 ? '인류의 5대 과학기술이 모두 당신의 손에서 태어났습니다.' : '살아남았지만 인류의 잠재력을 다 펼치지는 못했습니다.');
+  $('endGrade').textContent = g;
+  $('endGrade').className = 'font-title leading-none ' + (g === '실패' ? 'text-4xl' : 'text-6xl') + ' ' +
+    (g === '실패' ? 'text-rose-400' : g === 'S' ? 'text-amber-300' : g === 'A' ? 'text-emerald-300' : g === 'B' ? 'text-sky-300' : 'text-slate-300');
+  $('endGradeDesc').innerHTML = d;
+
+  // 실패(문명 붕괴)하면 점수를 매기지 않고 숨깁니다
+  const scoreBox = $('endScore').closest('div.text-left');
+  const scorePanel = $('endScoreRows').closest('div.rounded-xl');
+  scoreBox.classList.toggle('hidden', !win);
+  scorePanel.classList.toggle('hidden', !win);
+
+  // 점수 계산 내역
+  $('endScore').textContent = sc.total;
+  $('endScoreRows').innerHTML = sc.rows.map(r =>
+    '<div class="flex items-center gap-2">' +
+      '<span class="text-base w-5">' + r.icon + '</span>' +
+      '<span class="text-slate-200 w-28 shrink-0">' + r.label + '</span>' +
+      '<span class="text-slate-500 text-[12px] flex-1 truncate">' + r.detail + '</span>' +
+      '<b class="' + (r.pts > 0 ? 'text-emerald-300' : 'text-slate-500') + '">' + (r.halve ? '×½' : '+' + r.pts) + '</b>' +
+    '</div>').join('') +
+    '<div class="flex items-center gap-2 border-t border-line mt-1.5 pt-1.5">' +
+      '<span class="text-base w-5">🏆</span><span class="text-white w-28 shrink-0">합계</span>' +
+      '<span class="flex-1"></span><b class="text-amber-300 text-lg">' + sc.total + '점</b></div>';
+
+  const stat = (icon, label, val, cls) =>
+    '<div class="rounded-lg bg-panel2 border border-line p-2"><div class="text-[11px] text-slate-400">' + icon + ' ' + label + '</div><div class="text-lg ' + cls + '">' + val + '</div></div>';
+  $('endStats').innerHTML =
+    stat('👥', '최종 인구', S.pop + '명', 'text-pop') +
+    stat('🍎', '남은 식량', Math.floor(S.food) + ' / ' + foodCap(), 'text-food') +
+    stat('💡', '보유 지식', S.know, 'text-know') +
+    stat('🌫️', '환경 오염도', Math.floor(S.poll) + '%', S.poll >= 50 ? 'text-rose-400' : 'text-poll') +
+    stat('🧪', '해금 기술', n + ' / 5', 'text-white') +
+    stat('⚔️', '전쟁 결과',
+      S.war ? ({ win: '승리 🚩', lose: '패배 💥', tribute: '조공으로 회피 🤝' })[S.war.result] : '없음',
+      S.war && S.war.result === 'lose' ? 'text-rose-400' : 'text-amber-300') +
+    stat('🌱', '환경 정화', S.purified + '회', 'text-emerald-300') +
+    stat('🏗️', '건설한 시설', Object.keys(S.built).length + '곳', 'text-sky-300') +
+    stat('⚖️', '기술 활용', Object.keys(S.choices).length
+      ? Object.keys(S.choices).map(k => TECH[k].icon + (S.choices[k] === 'a' ? '안전' : '최대')).join(' ')
+      : '-', 'text-amber-200');
+
+  $('endTechs').innerHTML = TECHS.map(t => S.techs[t.id]
+    ? '<div class="flex items-center gap-2"><span>' + t.icon + '</span><span class="text-emerald-300">' + t.name + '</span><span class="text-slate-500 text-[11px] ml-auto">' + S.techTurn[t.id] + '턴 개발</span></div>'
+    : '<div class="flex items-center gap-2 opacity-50"><span class="grayscale">' + t.icon + '</span><span class="text-slate-400 line-through">' + t.name + '</span><span class="text-rose-400 text-[11px] ml-auto">미개발</span></div>'
+  ).join('');
+
+  const hist = S.history.length
+    ? S.history.map(h => '<div class="flex gap-2"><span class="text-slate-500 shrink-0">' + h.turn + '턴</span><span class="' +
+        (h.type === 'good' || h.type === 'tech' ? 'text-emerald-300' : h.type === 'bad' ? 'text-rose-300' : 'text-slate-300') + '">' +
+        h.msg.replace(/<[^>]*>/g, '') + '</span></div>').join('')
+    : '<div class="text-slate-500">특별한 사건 없이 조용한 문명이었습니다.</div>';
+  $('endHistory').innerHTML = hist;
+
+  $('reflectOpts').innerHTML = TECHS.map(t =>
+    '<button data-r="' + t.id + '" class="reflect-btn rounded-xl border-2 border-line bg-panel px-2 py-2 text-[13px] hover:border-amber-400 active:scale-95 transition">' + t.icon + ' ' + t.name + '</button>').join('');
+  const wn = $('warNote');
+  if (S.war) {
+    wn.classList.remove('hidden');
+    wn.innerHTML = '⚔️ 이번 문명은 ' + S.war.turn + '턴에 <b>' + S.war.enemy + '</b>의 침입을 겪었고, ' +
+      ({ win: '<b class="text-emerald-200">기술의 힘으로 지켜냈습니다.</b>',
+         lose: '<b class="text-rose-200">막아내지 못하고 큰 피해를 입었습니다.</b>',
+         tribute: '<b class="text-amber-200">싸우지 않고 조공으로 넘겼습니다.</b>' })[S.war.result] + '<br>' +
+      '<b>과학기술은 문명을 지키는 방패가 되기도, 다른 문명을 위협하는 창이 되기도 했습니다. 기술을 쓰는 사람에게 필요한 것은 무엇일까요?</b>';
+  } else {
+    wn.classList.add('hidden');
+  }
+  $('reflectMsg').textContent = '';
+  $('reflectOpts').querySelectorAll('.reflect-btn').forEach(b => b.addEventListener('click', () => {
+    const t = TECH[b.dataset.r];
+    sfx('click');
+    $('reflectOpts').querySelectorAll('.reflect-btn').forEach(x =>
+      x.className = 'reflect-btn rounded-xl border-2 border-line bg-panel px-2 py-2 text-[13px] hover:border-amber-400 active:scale-95 transition');
+    b.className = 'reflect-btn rounded-xl border-2 border-amber-400 bg-amber-500/20 px-2 py-2 text-[13px] transition';
+    $('reflectMsg').innerHTML = '💬 <b>' + t.name + '</b> — ' + t.why + ' <span class="text-slate-400">친구들과 이유를 이야기해 보세요!</span>';
+  }));
+
+  $('endModal').classList.remove('hidden');
+  $('endModal').classList.add('flex');
+
+  if (win && (g.startsWith('S') || g === 'A')) {
+    sfx('win');
+    let cnt = 0;
+    const iv = setInterval(() => {
+      try {
+        confetti({ particleCount: 60, spread: 90, origin: { x: Math.random(), y: Math.random() * 0.4 + 0.1 } });
+      } catch (e) {}
+      if (++cnt > 5) clearInterval(iv);
+    }, 320);
+  } else if (!win) { sfx('bad'); }
+}
+
+/* =========================================================
+   초기화 & 이벤트 바인딩
+   ========================================================= */
+function boot() {
+  if (logTimer) { clearInterval(logTimer); logTimer = null; }
+  logQueue = []; onDrain = null;
+  S = newState();
+  buildMap();
+  $('log').innerHTML = '';
+  $('logCount').textContent = '0건';
+  $('endModal').classList.add('hidden'); $('endModal').classList.remove('flex');
+  $('eventModal').classList.add('hidden'); $('eventModal').classList.remove('flex');
+  closeQuiz();
+  render();
+  log('🌱 작은 정착지에서 문명이 시작되었습니다. (인구 10명 · 식량 50 · 지식 20)', 'good');
+  log('💬 팁: 위기와 전쟁 5번이 무작위 순서로 찾아옵니다. 화면 위 예고를 보고 미리 준비하세요!', 'warn');
+  bubble('여기서 우리 문명을 시작하자!', 'good', 700);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  boot();
+  // 외부 이미지가 지정돼 있으면 불러온 뒤 다시 그림 (실패분은 내장 SVG 유지)
+  preloadImages(() => {
+    if (pic(IMG.titleBg)) {
+      const bg = $('titleBg');
+      bg.style.backgroundImage = 'url("' + pic(IMG.titleBg) + '")';
+      // 그림 상단(대개 제목·워터마크가 있는 부분)을 잘라내고 아래쪽 풍경을 보여줍니다
+      bg.style.backgroundSize = 'auto 130%';
+      bg.style.backgroundPosition = 'center bottom';
+    }
+    if (S) { buildMap(); render(); }
+  });
+  try { if (window.lucide) lucide.createIcons(); } catch (e) {}
+
+  $('nextTurnBtn').addEventListener('click', endTurn);
+  $('quizClose').addEventListener('click', closeQuiz);
+  $('restartBtn').addEventListener('click', () => { sfx('click'); boot(); showTitle(); });
+  /* ---------- 타이틀 화면 메뉴 ---------- */
+  const introPage = page => {
+    ['introHome', 'introHow', 'introSci'].forEach(id => $(id).classList.add('hidden'));
+    $(page).classList.remove('hidden');
+    $('introModal').querySelector('.overflow-y-auto').scrollTop = 0;
+  };
+  /* 새 게임을 시작할 때는 항상 타이틀 화면부터 */
+  window.showTitle = () => {
+    introPage('introHome');
+    $('startBtn').innerHTML = '▶  게임 시작';
+    $('introModal').classList.remove('hidden');
+    $('introModal').classList.add('flex');
+  };
+  $('startBtn').addEventListener('click', () => {
+    sfx('good');
+    $('introModal').classList.add('hidden');
+    $('introModal').classList.remove('flex');
+  });
+  $('howBtn').addEventListener('click', () => { sfx('click'); introPage('introHow'); });
+  $('sciBtn').addEventListener('click', () => { sfx('click'); renderSciCards(); introPage('introSci'); });
+  document.querySelectorAll('.backBtn').forEach(b =>
+    b.addEventListener('click', () => { sfx('click'); introPage('introHome'); }));
+  $('helpBtn').addEventListener('click', () => {
+    sfx('click');
+    introPage('introHome');
+    $('startBtn').innerHTML = '▶  게임으로 돌아가기';
+    $('introModal').classList.remove('hidden');
+    $('introModal').classList.add('flex');
+  });
+  $('quizModal').addEventListener('click', e => { if (e.target.id === 'quizModal') closeQuiz(); });
+
+  /* 🔄 다시하기 — 확인을 거쳐 초기화 */
+  const openConfirm = () => {
+    sfx('click');
+    $('confirmSub').innerHTML = S.over
+      ? '새로운 문명을 처음부터 시작합니다.'
+      : '지금까지의 진행 상황(<b class="text-white">' + S.turn + '턴 · 인구 ' + S.pop + '명 · 기술 ' + techCount() + '개</b>)이<br>모두 사라지고 1턴부터 새로 시작합니다.';
+    $('confirmModal').classList.remove('hidden');
+    $('confirmModal').classList.add('flex');
+  };
+  const closeConfirm = () => {
+    $('confirmModal').classList.add('hidden');
+    $('confirmModal').classList.remove('flex');
+  };
+  $('resetBtn').addEventListener('click', openConfirm);
+  $('confirmNo').addEventListener('click', () => { sfx('click'); closeConfirm(); });
+  $('confirmYes').addEventListener('click', () => {
+    sfx('good'); closeConfirm();
+    $('eventModal').classList.add('hidden'); $('eventModal').classList.remove('flex');
+    $('drawModal').classList.add('hidden'); $('drawModal').classList.remove('flex');
+    closeQuiz();
+    boot();
+    showTitle();
+  });
+  $('confirmModal').addEventListener('click', e => { if (e.target.id === 'confirmModal') closeConfirm(); });
+  setInterval(wanderCitizens, 2200);   // 시민들이 맵 위를 자유롭게 돌아다님
+});
+</script>
+</body>
+</html>
