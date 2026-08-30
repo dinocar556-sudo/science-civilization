@@ -798,7 +798,8 @@ tailwind.config = {
 }
 </script>
 <style>
-  html, body { font-family: 'Jua', 'Do Hyeon', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+  /* 이모지 전용 글꼴을 뒤에 붙여, 본문 글꼴에 없는 그림문자도 확실히 표시되게 합니다 */
+  html, body { font-family: 'Jua', 'Do Hyeon', system-ui, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Symbol', sans-serif; -webkit-tap-highlight-color: transparent; }
   /* 게임 제목·큰 헤딩용 서체 */
   .font-title { font-family: 'Black Han Sans', 'Jua', sans-serif; letter-spacing: .02em; }
   .title-glow {
@@ -1529,7 +1530,7 @@ tailwind.config = {
 
         <!-- 하단 시민 HUD -->
         <div class="flex items-center gap-2 px-3 py-2 border-t-2 border-line bg-panel">
-          <span id="hudFace" class="text-2xl shrink-0">🧑‍🌾</span>
+          <span id="hudFace" class="text-2xl shrink-0">🌾</span>
           <div class="min-w-0 flex-1">
             <div class="text-[10px] text-slate-400 leading-none">시민의 목소리</div>
             <div id="hudQuote" class="text-[13px] text-slate-200 truncate">여기서 우리 문명을 시작하자!</div>
@@ -1551,7 +1552,7 @@ tailwind.config = {
     <section class="lg:col-span-5 flex flex-col gap-1.5 xl:gap-2 lg:min-h-0 lg:overflow-y-auto no-scrollbar">
       <div class="rounded-2xl border-2 border-line bg-panel p-2 flex flex-col lg:flex-1 lg:min-h-0">
         <div class="flex items-center justify-between mb-1.5 px-0.5 shrink-0">
-          <div class="flex items-center gap-2"><span class="text-xl">🧪</span><span class="text-sm xl:text-base text-white">과학기술 연구소</span></div>
+          <div class="flex items-center gap-2"><span class="text-xl">🔬</span><span class="text-sm xl:text-base text-white">과학기술 연구소</span></div>
           <span id="techCount" class="text-[11px] px-2 py-1 rounded-lg bg-panel2 border border-line text-slate-300">0 / 5 해금</span>
         </div>
         <div id="techGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 lg:flex-1 lg:min-h-0"></div>
@@ -1566,7 +1567,7 @@ tailwind.config = {
             <span class="text-[11px] text-slate-400 ml-1">행동력</span>
           </div>
         </div>
-        <div id="actionGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5"></div>
+        <div id="actionGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5 gap-1.5"></div>
       </div>
 
       <div class="rounded-2xl border-2 border-line bg-panel p-2.5 space-y-2">
@@ -1773,7 +1774,7 @@ tailwind.config = {
     <!-- 그림 위쪽(그림에 새겨진 제목 부분)은 잘라내고 아래 풍경만 보이도록 배치 -->
     <div id="titleBg" class="absolute inset-0 bg-cover bg-center"
          style="background-image:radial-gradient(120% 90% at 50% 0%,#3b4b7a 0%,#1b2340 45%,#0b1220 100%)"></div>
-    <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/75"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/50"></div>
 
     <div class="relative h-full overflow-y-auto">
 
@@ -1839,7 +1840,7 @@ tailwind.config = {
         <div class="rounded-xl bg-black/45 border border-line p-3 text-[13px] mt-2">
           <div class="text-sky-300 mb-1">⚡ 턴마다 행동력 2개 — 무엇에 쓸까요?</div>
           <div class="text-slate-200 leading-snug">
-            🏗️ 시설 건설 · 🔬 기술 연구 · 🌱 환경 정화 · 🧭 탐험 보내기<br>
+            🏗️ 시설 건설 · 🔬 기술 연구 · 🌱 환경 정화 · 🔭 탐험 보내기<br>
             <span class="text-slate-400">각 행동은 한 턴에 한 번씩. 남기면 개당 💡+2로 바뀝니다.</span>
           </div>
         </div>
@@ -1933,7 +1934,7 @@ tailwind.config = {
     <div class="mt-3 rounded-xl bg-panel border border-line p-3">
       <div class="flex items-center justify-between mb-2">
         <span class="text-amber-300 text-sm">📊 점수 계산</span>
-        <span class="text-[11px] text-slate-400">S 1150 · A 1040 · B 920 · C 780</span>
+        <span class="text-[11px] text-slate-400">S 1100 · A 990 · B 880 · C 790</span>
       </div>
       <div id="endScoreRows" class="space-y-1 text-[13px]"></div>
     </div>
@@ -1944,7 +1945,7 @@ tailwind.config = {
         <div id="endStats" class="grid grid-cols-2 gap-2 text-[13px]"></div>
       </div>
       <div class="rounded-xl bg-panel border border-line p-3">
-        <div class="text-amber-300 text-sm mb-2">🧪 기술 해금 현황</div>
+        <div class="text-amber-300 text-sm mb-2">🔬 기술 해금 현황</div>
         <div id="endTechs" class="space-y-1 text-[13px]"></div>
       </div>
     </div>
@@ -2085,7 +2086,7 @@ function preloadImages(done) {
 const TECHS = [
   {
     id: 'print', name: '활판 인쇄술', sub: '지식 혁명', icon: '📜', sp: 'sp-t-print',
-    cost: { k: 40, f: 0 },
+    cost: { k: 35, f: 0 },
     effect: '학자 1명당 💡2 → 💡3 · 날씨 예보 · 위기 정체 파악',
     side: null,
     q: '금속 활자로 책을 대량 인쇄하여 지식을 널리 보급한 기술은?',
@@ -2094,7 +2095,7 @@ const TECHS = [
   },
   {
     id: 'fert', name: '질소 비료', sub: '농업 혁명', icon: '🌾', sp: 'sp-t-fert',
-    cost: { k: 90, f: 40 },
+    cost: { k: 85, f: 35 },
     effect: '턴당 식량 생산량 +20 ➔ +45 · 대기근 완전 면역',
     side: null,
     q: '공기 중 질소로 암모니아를 합성해 만든 식량 대량 증산의 주역은?',
@@ -2103,7 +2104,7 @@ const TECHS = [
   },
   {
     id: 'steam', name: '증기기관', sub: '교통·산업 혁명', icon: '🚂', sp: 'sp-t-steam',
-    cost: { k: 145, f: 45 },
+    cost: { k: 135, f: 40 },
     effect: '식량 저장 한도 100 ➔ 250, 턴당 지식 +10',
     side: '매 턴 환경 오염도 +5% 누적',
     q: '증기의 압력으로 기계를 움직여 대량 수송을 가능하게 한 동력원은?',
@@ -2112,7 +2113,7 @@ const TECHS = [
   },
   {
     id: 'peni', name: '페니실린', sub: '의료 혁명', icon: '💊', sp: 'sp-t-peni',
-    cost: { k: 230, f: 45 }, gate: 'poll40',
+    cost: { k: 210, f: 40 }, gate: 'poll40',
     effect: '전염병 위기 완전 면역, 자연 사망률 0%',
     side: null,
     q: '푸른곰팡이에서 발견되어 세균성 질환을 치료하고 수명을 늘린 의약품은?',
@@ -2121,7 +2122,7 @@ const TECHS = [
   },
   {
     id: 'ict', name: '정보통신 기술', sub: '초연결 사회', icon: '📡', sp: 'sp-t-ict',
-    cost: { k: 305, f: 60 },
+    cost: { k: 280, f: 55 },
     effect: '매 턴 지식 +25 · 다가오는 위기의 대비책까지 파악',
     side: null,
     q: '전 세계를 인터넷으로 연결해 정보를 실시간으로 공유하게 만든 기술은?',
@@ -2808,7 +2809,7 @@ const warPower = t => Math.round(t * 7 + 12);      // 8턴 ≈ 68 · 10턴 ≈ 8
 function powerParts() {
   return [
     { label: '👥 인구', v: S.pop },
-    { label: '🧪 보유 기술 ' + techCount() + '개', v: techCount() * 15 }
+    { label: '🔬 보유 기술 ' + techCount() + '개', v: techCount() * 15 }
   ];
 }
 const myPower = () => Math.max(0, powerParts().reduce((a, b) => a + b.v, 0));
@@ -2918,7 +2919,7 @@ function resolveWar(turn, mine, power, enemy, forcedWin, forcedRoll) {
   $('battleModal').classList.add('hidden'); $('battleModal').classList.remove('flex');
   const pct = Math.round(rate * 100), rollPct = Math.round(roll * 100);
   const dice = '🎲 승리 확률 ' + pct + '% · 주사위 ' + rollPct + ' → <b>' + (win ? '승리' : '패배') + '</b>';
-  const dead = Math.floor(S.pop * (win ? 0.1 : 0.3));
+  const dead = Math.floor(S.pop * (win ? 0.08 : 0.22));
   S.pop -= dead;
 
   if (win) {
@@ -2955,13 +2956,13 @@ const CARDS = [
   { icon: '🌧️', name: '단비',        eff: '🍎+25',
     note: '오랜만에 내린 비로 밭이 살아났습니다.',
     run: () => { S.food = Math.min(foodCap(), S.food + 25); } },
-  { icon: '🧑‍🔬', name: '떠돌이 학자', eff: '💡+30',
+  { icon: '🔬', name: '떠돌이 학자', eff: '💡+30',
     note: '먼 곳에서 온 학자가 새로운 지식을 전했습니다.',
     run: () => { S.know += 30; } },
   { icon: '⛏️', name: '광맥 발견',    eff: '💡+20',
     note: '언덕에서 새로운 광물이 발견되었습니다.',
     run: () => { S.know += 20; } },
-  { icon: '👨‍👩‍👧', name: '이주민 합류', eff: '👥+4',
+  { icon: '👥', name: '이주민 합류', eff: '👥+4',
     note: '살 곳을 찾던 사람들이 우리 문명에 합류했습니다.',
     run: () => { S.pop += 4; } },
   { icon: '📜', name: '고문헌 발굴',  eff: '💡+15 🍎+10',
@@ -2970,7 +2971,7 @@ const CARDS = [
   { icon: '🏕️', name: '개척단 합류',  eff: '💡+20 🍎+20',
     note: '새 땅을 찾던 개척단이 우리 문명에 합류했습니다.',
     run: () => { S.know += 20; S.food = Math.min(foodCap(), S.food + 20); } },
-  { icon: '💨', name: '맑은 바람',    eff: '🌫️-12%',
+  { icon: '💨', name: '맑은 바람',    eff: '☁️-12%',
     note: '큰 바람이 불어 하늘이 한결 맑아졌습니다.',
     run: () => { S.poll = Math.max(0, S.poll - 12); } },
   { icon: '🛠️', name: '장인 방문',    eff: '⚡+1 (이번 턴)',
@@ -2996,7 +2997,7 @@ const CARDS = [
   { icon: '🏺', name: '유물 판매',    eff: '💡-10 → 🍎+30',
     note: '귀한 기록을 내주고 식량을 얻었습니다. 아쉬운 거래였습니다.',
     run: () => { S.know = Math.max(0, S.know - 10); S.food = Math.min(foodCap(), S.food + 30); } },
-  { icon: '⚗️', name: '위험한 실험',  eff: '💡+45 · 🌫️+8',
+  { icon: '⚗️', name: '위험한 실험',  eff: '💡+45 · ☁️+8',
     note: '큰 발견을 얻었지만 실험 폐기물이 강으로 흘러갔습니다.',
     run: () => { S.know += 45; S.poll = clamp(S.poll + 8, 0, 100); } },
 
@@ -3009,7 +3010,7 @@ const CARDS = [
     note: '해충이 들판을 휩쓸었습니다.',
     run: () => { S.food = Math.max(0, S.food - 18); } },
   { icon: '😷', name: '풍토병', bad: true, eff: '👥-3',
-    guard: 'vaccine', guardKind: 'proj', guardMsg: '🧬 백신 연구소가 미리 접종을 마쳐 풍토병을 막아냈습니다!',
+    guard: 'vaccine', guardKind: 'proj', guardMsg: '💉 백신 연구소가 미리 접종을 마쳐 풍토병을 막아냈습니다!',
     note: '낯선 병이 돌아 사람들이 앓아누웠습니다.',
     run: () => { S.pop = Math.max(1, S.pop - 3); } },
   { icon: '💸', name: '기술 유출', bad: true, eff: '💡-25',
@@ -3044,13 +3045,13 @@ const MICRO = [
     run: () => { S.food = Math.min(foodCap(), S.food + 8); } },
   { icon: '🐟', msg: '강에 물고기가 몰려와 그물이 가득 찼습니다.', eff: '🍎+10', tone: 'good',
     run: () => { S.food = Math.min(foodCap(), S.food + 10); } },
-  { icon: '🧵', msg: '한 노인이 오래된 베짜기 기술을 젊은이들에게 전했습니다.', eff: '💡+8', tone: 'good',
+  { icon: '👕', msg: '한 노인이 오래된 베짜기 기술을 젊은이들에게 전했습니다.', eff: '💡+8', tone: 'good',
     run: () => { S.know += 8; } },
-  { icon: '🪨', msg: '아이가 강가에서 이상한 돌을 주워 왔습니다.', eff: '💡+6', tone: 'good',
+  { icon: '⛏️', msg: '아이가 강가에서 이상한 돌을 주워 왔습니다.', eff: '💡+6', tone: 'good',
     run: () => { S.know += 6; } },
   { icon: '☔', msg: '알맞게 비가 내려 밭이 촉촉해졌습니다.', eff: '🍎+6', tone: 'good',
     run: () => { S.food = Math.min(foodCap(), S.food + 6); } },
-  { icon: '🧭', msg: '사냥꾼이 지금껏 몰랐던 골짜기 길을 찾아냈습니다.', eff: '💡+10', tone: 'good',
+  { icon: '🔭', msg: '사냥꾼이 지금껏 몰랐던 골짜기 길을 찾아냈습니다.', eff: '💡+10', tone: 'good',
     run: () => { S.know += 10; } },
 
   /* --- 작은 손실 --- */
@@ -3070,13 +3071,13 @@ const MICRO = [
     when: () => has('steam') },
   { icon: '🛒', msg: '장이 크게 서서 온 마을이 북적였습니다.', eff: '🍎+12', tone: 'good',
     when: () => S.pop >= 25, run: () => { S.food = Math.min(foodCap(), S.food + 12); } },
-  { icon: '🩺', msg: '병원 덕에 올겨울에는 앓아누운 사람이 없었습니다.', eff: '👥+1', tone: 'good',
+  { icon: '💉', msg: '병원 덕에 올겨울에는 앓아누운 사람이 없었습니다.', eff: '👥+1', tone: 'good',
     when: () => has('peni'), run: () => { S.pop += 1; } },
   { icon: '📡', msg: '먼 문명의 소식이 실시간으로 들어오기 시작했습니다.', eff: '💡+15', tone: 'good',
     when: () => has('ict'), run: () => { S.know += 15; } },
   { icon: '🍞', msg: '곳간이 넉넉해 잔치를 벌였습니다.', eff: '👥+1', tone: 'good',
     when: () => S.food >= foodCap() * 0.8, run: () => { S.pop += 1; } },
-  { icon: '🥣', msg: '먹을 것이 모자라 죽을 묽게 끓였습니다.', tone: 'warn',
+  { icon: '🍚', msg: '먹을 것이 모자라 죽을 묽게 끓였습니다.', tone: 'warn',
     when: () => S.food < S.pop * 1.5 }
 ];
 
@@ -3214,12 +3215,12 @@ const ACTIONS = [
   },
   {
     id: 'clean', icon: '🌱', name: '환경 정화',
-    desc: () => '💡-30 → 🌫️ -25%',
+    desc: () => '💡-30 → ☁️ -25%',
     can: () => S.know >= 30 && S.poll > 0,
     run: () => purify()
   },
   {
-    id: 'scout', icon: '🧭', name: '탐험 보내기',
+    id: 'scout', icon: '🔭', name: '탐험 보내기',
     desc: () => '🍎-5 → 💡+5 · 🍎 랜덤',
     can: () => S.food >= 5,
     run: () => {
@@ -3227,7 +3228,7 @@ const ACTIONS = [
       const k = 5, f = [0, 5, 10, 20][Math.floor(Math.random() * 4)];
       S.know += k; S.food = Math.min(foodCap(), S.food + f);
       const gain = '💡+' + k + (f ? ' 🍎+' + f : '');
-      log('🧭 [행동] 탐험대가 돌아왔습니다. <b>' + gain + '</b>' +
+      log('🔭 [행동] 탐험대가 돌아왔습니다. <b>' + gain + '</b>' +
         (f ? ' 발견! <span class="text-slate-500">(보급 🍎-5 소모)</span>' : ' <span class="text-slate-500">(새 땅은 못 찾고 보급 🍎-5만 썼습니다)</span>'), f ? 'good' : 'warn');
       bubble(f ? '새 땅 발견! ' + gain : '빈손이에요… ' + gain, f ? 'good' : 'warn', 100);
       floatText(gain, f ? 'text-emerald-300' : 'text-amber-300');
@@ -3559,7 +3560,7 @@ function render() {
     (gain >= 0 ? '+' : '') + gain + '</span> · 💡<span class="text-amber-300">+' + knowGain() + '</span>' +
     ' · 👶<span class="' + (growNow >= 5 ? 'text-emerald-300' : growNow ? 'text-sky-300' : 'text-rose-400') + '">+' + growNow + '</span>' +
     '<span class="text-slate-500 text-[11px]">(1인당 비축 ' + perHead.toFixed(1) + ')</span>' +
-    (has('steam') && !S.protest ? ' · 🌫️<span class="text-violet-300">+' + BAL.POLL_PER_TURN + '%</span>' : '') +
+    (has('steam') && !S.protest ? ' · ☁️<span class="text-violet-300">+' + BAL.POLL_PER_TURN + '%</span>' : '') +
     (S.ap > 0 ? ' · <span class="text-sky-300">남은 ⚡' + S.ap + '개 → 💡+' + (S.ap * 2) + '</span>' : '');
 
   renderActions();
@@ -3841,16 +3842,16 @@ const DILEMMA = {
   fert: {
     q: '비료를 얼마나 뿌릴까요?',
     a: { label: '🌱 적정량만 사용한다', eff: '변화 없음', why: '땅과 물을 지켰습니다. 지속 가능한 농업의 기본입니다.' },
-    b: { label: '🧪 최대한 많이 뿌린다', eff: '턴당 🍎+15 · 🌫️+3', why: '비료가 강으로 흘러들면 녹조가 생깁니다. 이것이 부영양화입니다.' }
+    b: { label: '🔬 최대한 많이 뿌린다', eff: '턴당 🍎+15 · ☁️+3', why: '비료가 강으로 흘러들면 녹조가 생깁니다. 이것이 부영양화입니다.' }
   },
   steam: {
     q: '공장을 어디에 세울까요?',
-    a: { label: '🏙️ 도시 한가운데', eff: '턴당 💡+10 · 🌫️+2', why: '기술자들이 모여 혁신은 빨라졌지만, 매연이 도시를 덮었습니다.' },
+    a: { label: '🏙️ 도시 한가운데', eff: '턴당 💡+10 · ☁️+2', why: '기술자들이 모여 혁신은 빨라졌지만, 매연이 도시를 덮었습니다.' },
     b: { label: '🏞️ 도시 밖 강가', eff: '턴당 🍎+10', why: '도시 공기는 지켰지만, 물과 땅으로 오염이 옮겨갈 수 있습니다.' }
   },
   peni: {
     q: '항생제를 가축에게도 쓸까요?',
-    a: { label: '🧑‍⚕️ 사람에게만 쓴다', eff: '변화 없음', why: '항생제를 아껴 쓰면 내성균이 잘 생기지 않습니다.' },
+    a: { label: '💉 사람에게만 쓴다', eff: '변화 없음', why: '항생제를 아껴 쓰면 내성균이 잘 생기지 않습니다.' },
     b: { label: '🐄 가축에게도 쓴다', eff: '턴당 🍎+12 · 내성균 위험', why: '항생제를 남용하면 살아남은 세균이 내성을 얻습니다. 그러면 약이 듣지 않습니다.' }
   },
   ict: {
@@ -3891,8 +3892,8 @@ function purify() {
   S.protest = false;
   sfx('good');
   log('🌱 환경 정화 사업 시행! 오염도 ' + Math.floor(before) + '% → ' + Math.floor(S.poll) + '% (💡-30)', 'good', true);
-  bubble('공기가 맑아졌어! 🌫️ ' + Math.floor(before) + '% → ' + Math.floor(S.poll) + '%', 'good', 100);
-  floatText('🌫️-' + (Math.floor(before) - Math.floor(S.poll)), 'text-emerald-300');
+  bubble('공기가 맑아졌어! ☁️ ' + Math.floor(before) + '% → ' + Math.floor(S.poll) + '%', 'good', 100);
+  floatText('☁️-' + (Math.floor(before) - Math.floor(S.poll)), 'text-emerald-300');
   S.purified++;
   render();
 }
@@ -3959,7 +3960,7 @@ function citizenReactions(shortage) {
   if (S.poll > 50 && !S.protest) {
     S.protest = true;
     bubble('기침 때문에 못 살겠다!', 'warn', d); d += 900;
-    log('🪧 [환경 시위] 시민들이 공장 가동을 막았습니다! 증기기관 효과 일시 중단 (환경 정화로 해결 가능)', 'bad', true);
+    log('📢 [환경 시위] 시민들이 공장 가동을 막았습니다! 증기기관 효과 일시 중단 (환경 정화로 해결 가능)', 'bad', true);
   } else if (S.poll <= 50 && S.protest) {
     S.protest = false;
     bubble('공기가 좋아졌으니 다시 일하자!', 'good', d); d += 900;
@@ -3983,8 +3984,8 @@ function citizenReactions(shortage) {
    전반부(3~6턴) 2건 · 후반부(7~11턴) 4건
    ========================================================= */
 const CRISIS_META = {
-  famine:    { icon: '🌾', name: '식량 대기근', counter: 'fert',  tip: '질소 비료가 없으면 인구 30% 아사' },
-  plague:    { icon: '☠️', name: '전염병 창궐', counter: 'peni',  tip: '페니실린이 없으면 인구 절반 사망' },
+  famine:    { icon: '🌾', name: '식량 대기근', counter: 'fert',  tip: '질소 비료가 없으면 인구 22% 아사' },
+  plague:    { icon: '☠️', name: '전염병 창궐', counter: 'peni',  tip: '페니실린이 없으면 인구 32% 사망' },
   logistics: { icon: '🚚', name: '물류 마비',   counter: 'steam', tip: '증기기관이 없으면 식량 50% 부패' },
   smog:      { icon: '🏭', name: '스모그 위기', counter: null,    tip: '오염도가 높으면 큰 피해' },
   war:       { icon: '⚔️', name: '이민족의 침입', counter: null, tip: '국력 = 인구 + (보유 기술 × 15)' }
@@ -4059,11 +4060,11 @@ function triggerCrisis(t) {
       try { confetti({ particleCount: 60, spread: 60, origin: { y: .6 } }); } catch (e) {}
       showEvent('🌾', t + '턴 · 식량 대기근', '전국에 흉년이 들었지만 <b class="text-emerald-300">질소 비료</b>로 만든 비축 식량이 있었습니다!<br>굶주린 이웃 부족까지 받아들여 <b class="text-emerald-300">인구 +10명</b> 증가!', [{ label: '👏 축하합니다!', onClick: done }]);
     } else {
-      const dead = Math.floor(S.pop * 0.3);
+      const dead = Math.floor(S.pop * 0.22);
       S.pop -= dead;
-      log('💀 [' + t + '턴 식량 대기근] 비료 기술이 없어 인구의 30%(' + dead + '명)가 굶어 죽었습니다.', 'bad', true);
+      log('💀 [' + t + '턴 식량 대기근] 비료 기술이 없어 인구의 22%(' + dead + '명)가 굶어 죽었습니다.', 'bad', true);
       shake(); sfx('bad');
-      showEvent('💀', t + '턴 · 식량 대기근', '오랜 가뭄으로 밭이 말라붙었습니다.<br><b class="text-rose-300">질소 비료</b>가 없어 인구의 30%인 <b class="text-rose-300">' + dead + '명</b>이 아사했습니다.', [{ label: '😢 견뎌낸다', cls: 'bg-rose-400 border-rose-600 text-slate-900', onClick: done }]);
+      showEvent('💀', t + '턴 · 식량 대기근', '오랜 가뭄으로 밭이 말라붙었습니다.<br><b class="text-rose-300">질소 비료</b>가 없어 인구의 22%인 <b class="text-rose-300">' + dead + '명</b>이 아사했습니다.', [{ label: '😢 견뎌낸다', cls: 'bg-rose-400 border-rose-600 text-slate-900', onClick: done }]);
     }
     return;
   }
@@ -4071,11 +4072,11 @@ function triggerCrisis(t) {
   if (ev === 'plague') {
     if (has('peni') && chose('peni', 'b')) {
       // ⚖️ 항생제 남용 → 내성균 등장으로 면역이 깨짐
-      const dead = Math.floor(S.pop * 0.25);
+      const dead = Math.floor(S.pop * 0.18);
       S.pop -= dead;
-      log('🦠 [' + t + '턴 전염병 창궐] 항생제 내성균 등장! 약이 잘 듣지 않아 인구 ' + dead + '명이 사망했습니다.', 'bad', true);
+      log('😷 [' + t + '턴 전염병 창궐] 항생제 내성균 등장! 약이 잘 듣지 않아 인구 ' + dead + '명이 사망했습니다.', 'bad', true);
       shake(); sfx('bad');
-      showEvent('🦠', t + '턴 · 전염병 창궐 (내성균)',
+      showEvent('😷', t + '턴 · 전염병 창궐 (내성균)',
         '가축에까지 항생제를 쓴 탓에 <b class="text-rose-300">내성균</b>이 생겼습니다.<br>페니실린이 잘 듣지 않아 <b class="text-rose-300">' + dead + '명</b>이 목숨을 잃었습니다.<br>' +
         '<span class="text-[12px] text-amber-200">🤔 항생제를 아껴 썼다면 어땠을까요?</span>',
         [{ label: '😷 교훈을 얻는다', cls: 'bg-rose-400 border-rose-600 text-slate-900', onClick: done }]);
@@ -4085,12 +4086,12 @@ function triggerCrisis(t) {
       log('💊 [' + t + '턴 전염병 창궐] 페니실린으로 환자 전원 완치! 피해 없음', 'good', true);
       showEvent('💊', t + '턴 · 전염병 창궐', '무서운 세균성 전염병이 퍼졌지만 <b class="text-emerald-300">페니실린</b>이 환자를 모두 살려냈습니다.<br><b class="text-emerald-300">인구 피해 0명!</b>', [{ label: '🙌 과학의 힘!', onClick: done }]);
     } else {
-      const dead = Math.floor(S.pop / 2);
+      const dead = Math.floor(S.pop * 0.32);
       S.pop -= dead;
       S.pendingSuperstition = true;   // 원인을 모르니 미신이 퍼짐 (이번 턴 끝에 발동)
-      log('☠️ [' + t + '턴 전염병 창궐] 항생제가 없어 인구 절반(' + dead + '명)이 사망했습니다.', 'bad', true);
+      log('☠️ [' + t + '턴 전염병 창궐] 항생제가 없어 인구의 32%(' + dead + '명)가 사망했습니다.', 'bad', true);
       shake(); sfx('bad');
-      showEvent('☠️', t + '턴 · 전염병 창궐', '세균성 전염병이 마을을 덮쳤습니다.<br><b class="text-rose-300">항생제</b>가 없어 인구의 절반인 <b class="text-rose-300">' + dead + '명</b>이 목숨을 잃었습니다.', [{ label: '😷 버텨낸다', cls: 'bg-rose-400 border-rose-600 text-slate-900', onClick: done }]);
+      showEvent('☠️', t + '턴 · 전염병 창궐', '세균성 전염병이 마을을 덮쳤습니다.<br><b class="text-rose-300">항생제</b>가 없어 인구의 32%인 <b class="text-rose-300">' + dead + '명</b>이 목숨을 잃었습니다.', [{ label: '😷 버텨낸다', cls: 'bg-rose-400 border-rose-600 text-slate-900', onClick: done }]);
     }
     return;
   }
@@ -4225,7 +4226,7 @@ function endTurn() {
   if (chose('steam', 'a')) pollAdd += 2;         // ⚖️ 도시 안 공장
   if (pollAdd > 0) {
     S.poll = clamp(S.poll + pollAdd, 0, 100);
-    log('🌫️ 환경 오염도 +' + pollAdd + '% (현재 ' + Math.floor(S.poll) + '%)', S.poll >= 50 ? 'bad' : 'warn');
+    log('☁️ 환경 오염도 +' + pollAdd + '% (현재 ' + Math.floor(S.poll) + '%)', S.poll >= 50 ? 'bad' : 'warn');
   }
 
   /* 8) 시민 자율 반응 */
@@ -4292,7 +4293,7 @@ function calcScore(win) {
   const n = techCount(), built = Object.keys(S.built).length;
   const warPts = !S.war ? 0 : ({ win: 120, tribute: 40, lose: 0 })[S.war.result];
   const rows = [
-    { icon: '🧪', label: '해금한 과학기술', detail: n + '개 × 100', pts: n * 100 },
+    { icon: '🔬', label: '해금한 과학기술', detail: n + '개 × 100', pts: n * 100 },
     { icon: '👥', label: '최종 인구',       detail: S.pop + '명 × 5', pts: S.pop * 5 },
     { icon: '💡', label: '남은 지식',       detail: S.know + ' ÷ 10 × 3', pts: Math.floor(S.know / 10) * 3 },
     { icon: '🍎', label: '남은 식량',       detail: Math.floor(S.food) + ' ÷ 10 × 2', pts: Math.floor(S.food / 10) * 2 },
@@ -4306,10 +4307,10 @@ function calcScore(win) {
 
 function calcGrade(win, score) {
   if (!win) return { g: '실패', d: '문명이 무너졌습니다. 과학기술은 <b>생존의 조건</b>이었습니다. 다시 도전해 보세요!' };
-  if (score >= 1150) return { g: 'S', d: '완벽합니다! 기술·인구·환경 어느 하나 놓치지 않은 <b>지속 가능한 스마트 문명</b>입니다.' };
-  if (score >= 1040) return { g: 'A', d: '훌륭합니다! 과학기술로 위기를 넘기며 <b>튼튼한 문명</b>을 세웠습니다.' };
-  if (score >= 920) return { g: 'B', d: '문명은 잘 살아남았습니다. 다만 더 챙길 수 있었던 부분이 남아 있습니다.' };
-  if (score >= 780)  return { g: 'C', d: '겨우 버텨냈습니다. 과학기술 투자가 부족해 위기마다 큰 피해를 입었습니다.' };
+  if (score >= 1100) return { g: 'S', d: '완벽합니다! 기술·인구·환경 어느 하나 놓치지 않은 <b>지속 가능한 스마트 문명</b>입니다.' };
+  if (score >= 990) return { g: 'A', d: '훌륭합니다! 과학기술로 위기를 넘기며 <b>튼튼한 문명</b>을 세웠습니다.' };
+  if (score >= 880) return { g: 'B', d: '문명은 잘 살아남았습니다. 다만 더 챙길 수 있었던 부분이 남아 있습니다.' };
+  if (score >= 790)  return { g: 'C', d: '겨우 버텨냈습니다. 과학기술 투자가 부족해 위기마다 큰 피해를 입었습니다.' };
   return { g: 'D', d: '문명이 무너졌습니다. 과학기술은 <b>생존의 조건</b>이었습니다. 다시 도전해 보세요!' };
 }
 
@@ -4358,8 +4359,8 @@ function endGame(win, reason) {
     stat('👥', '최종 인구', S.pop + '명', 'text-pop') +
     stat('🍎', '남은 식량', Math.floor(S.food) + ' / ' + foodCap(), 'text-food') +
     stat('💡', '보유 지식', S.know, 'text-know') +
-    stat('🌫️', '환경 오염도', Math.floor(S.poll) + '%', S.poll >= 50 ? 'text-rose-400' : 'text-poll') +
-    stat('🧪', '해금 기술', n + ' / 5', 'text-white') +
+    stat('☁️', '환경 오염도', Math.floor(S.poll) + '%', S.poll >= 50 ? 'text-rose-400' : 'text-poll') +
+    stat('🔬', '해금 기술', n + ' / 5', 'text-white') +
     stat('⚔️', '전쟁 결과',
       S.war ? ({ win: '승리 🚩', lose: '패배 💥', tribute: '조공으로 회피 🤝' })[S.war.result] : '없음',
       S.war && S.war.result === 'lose' ? 'text-rose-400' : 'text-amber-300') +
@@ -4455,9 +4456,10 @@ window.addEventListener('DOMContentLoaded', () => {
     if (pic(IMG.titleBg)) {
       const bg = $('titleBg');
       bg.style.backgroundImage = 'url("' + pic(IMG.titleBg) + '")';
-      // 그림 상단(대개 제목·워터마크가 있는 부분)을 잘라내고 아래쪽 풍경을 보여줍니다
-      bg.style.backgroundSize = 'auto 130%';
-      bg.style.backgroundPosition = 'center bottom';
+      // 화면을 꽉 채우되 그림의 구도를 최대한 살립니다.
+      // 아래쪽(풍경·도시)이 더 보이도록 세로 기준점을 살짝 아래로 둡니다.
+      bg.style.backgroundSize = 'cover';
+      bg.style.backgroundPosition = 'center 62%';
     }
     if (S) { buildMap(); render(); }
   });
